@@ -1,0 +1,7 @@
+version: '3.8'
+
+services:
+  app:
+    image: cornellappdev/alumni-website:${IMAGE_TAG}
+    ports:
+      - "8000:8000"
