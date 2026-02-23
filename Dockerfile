@@ -1,4 +1,3 @@
-# Create a Dockerfile for a Flask application
 FROM python:3.9
 WORKDIR /app
 COPY requirements.txt requirements.txt
