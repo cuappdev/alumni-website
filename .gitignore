@@ -1,3 +1,50 @@
-*.pem
-*.env
+# ---- Dependencies ----
+node_modules/
+.pnp
+.pnp.js
+.pnpm-store/
+
+# ---- Next.js ----
+.next/
+out/
+/build
+
+# ---- TypeScript ----
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- Testing / Coverage ----
+/coverage
+.nyc_output
+
+# ---- Firebase ----
 firebase-service-account.json
+firebase-debug.log
+firestore-debug.log
+storage-debug.log
+ui-debug.log
+.firebase/
+
+# ---- Environment / Secrets ----
+*.pem
+.env
+.env.*
+!.env.example
+
+# ---- macOS ----
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ---- Editor ----
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ---- Misc ----
+*.log
+.turbo
+.vercel

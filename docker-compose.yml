@@ -4,4 +4,6 @@ services:
   app:
     image: cornellappdev/alumni-website:${IMAGE_TAG}
     ports:
-      - "8000:8000"
+      - "3000:3000"
+    env_file:
+      - .env.local
