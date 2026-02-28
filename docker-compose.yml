@@ -7,3 +7,7 @@ services:
       - "3000:3000"
     env_file:
       - .env.local
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-service-account.json
+    volumes:
+      - /opt/alumni-website/firebase-service-account.json:/app/firebase-service-account.json:ro
