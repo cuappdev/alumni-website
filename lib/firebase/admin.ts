@@ -1,11 +1,10 @@
-import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { initializeApp, getApps, applicationDefault } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
-import serviceAccount from "../../firebase-service-account.json";
 
 if (getApps().length === 0) {
   initializeApp({
-    credential: cert(serviceAccount as object),
+    credential: applicationDefault(),
   });
 }
 
