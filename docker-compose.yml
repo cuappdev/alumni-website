@@ -10,4 +10,4 @@ services:
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-service-account.json
     volumes:
-      - /opt/alumni-website/firebase-service-account.json:/app/firebase-service-account.json:ro
+      - /root/docker-compose/firebase-service-account.json:/app/firebase-service-account.json:ro
