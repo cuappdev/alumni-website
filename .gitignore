@@ -30,6 +30,8 @@ ui-debug.log
 .env
 .env.*
 !.env.example
+!.env.development
+!.env.production
 
 # ---- macOS ----
 .DS_Store
