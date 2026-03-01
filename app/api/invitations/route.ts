@@ -3,7 +3,6 @@ import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { Resend } from "resend";
 import { Timestamp } from "firebase-admin/firestore";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const isDev = process.env.NODE_ENV === "development";
 
@@ -14,6 +13,7 @@ async function sendInviteEmail(to: string, signupLink: string) {
     console.log(`   Link:    ${signupLink}\n`);
     return;
   }
+  const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
     from: "AppDev Alumni <noreply@alumni.cornellappdev.com>",
     to,
