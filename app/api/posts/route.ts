@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { Resend } from "resend";
 import { Timestamp } from "firebase-admin/firestore";
+import { getTokens } from "next-firebase-auth-edge";
+import { authConfig } from "@/lib/firebase/auth-edge";
+import { getPosts } from "@/lib/firestore/posts";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const isDev = process.env.NODE_ENV === "development";
@@ -36,22 +39,27 @@ async function sendPostNotifications(
   );
 }
 
+export async function GET(request: NextRequest) {
+  const tokens = await getTokens(request.cookies, authConfig);
+  if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const posts = await getPosts();
+  return NextResponse.json(posts);
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get("__session")?.value;
-    if (!sessionCookie) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const tokens = await getTokens(request.cookies, authConfig);
+    if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
     const { title, description } = await request.json();
 
     if (!title || !description) {
       return NextResponse.json({ error: "Title and description required" }, { status: 400 });
     }
 
-    const postRef = await adminDb.collection("posts").add({
-      authorId: decoded.uid,
+    await adminDb.collection("posts").add({
+      authorId: tokens.decodedToken.uid,
       title,
       description,
       likes: [],
@@ -67,7 +75,7 @@ export async function POST(request: NextRequest) {
       await sendPostNotifications(subscribers as { email: string }[], title, description);
     }
 
-    return NextResponse.json({ id: postRef.id });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Post creation error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

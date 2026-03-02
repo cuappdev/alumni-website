@@ -1,44 +1,50 @@
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  orderBy,
-  query,
-  doc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
-import { Post } from "@/types";
+import { adminDb } from "@/lib/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
+import { Post, PostAuthor } from "@/types";
 
-export async function createPost(
-  authorId: string,
-  title: string,
-  description: string
-): Promise<string> {
-  const ref = await addDoc(collection(db, "posts"), {
-    authorId,
-    title,
-    description,
-    likes: [],
-    createdAt: serverTimestamp(),
-  });
-  return ref.id;
+function serializePost(id: string, data: FirebaseFirestore.DocumentData): Post {
+  return {
+    ...data,
+    id,
+    createdAt: data.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+  } as Post;
 }
 
-export function subscribeToPosts(callback: (posts: Post[]) => void): () => void {
-  const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-  return onSnapshot(q, (snap) => {
-    const posts = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post));
-    callback(posts);
-  });
+export async function getPosts(): Promise<Post[]> {
+  const snap = await adminDb.collection("posts").orderBy("createdAt", "desc").get();
+  const posts = snap.docs.map((d) => serializePost(d.id, d.data()));
+
+  // Batch-fetch unique authors
+  const authorIds = [...new Set(posts.map((p) => p.authorId))];
+  if (authorIds.length === 0) return posts;
+
+  const authorRefs = authorIds.map((uid) => adminDb.collection("users").doc(uid));
+  const authorDocs = await adminDb.getAll(...authorRefs);
+  const authorMap = new Map<string, PostAuthor>();
+  for (const d of authorDocs) {
+    if (d.exists) {
+      const u = d.data()!;
+      authorMap.set(d.id, {
+        uid: d.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        classYear: u.classYear,
+        profilePictureUrl: u.profilePictureUrl,
+      });
+    }
+  }
+
+  return posts.map((p) => ({ ...p, author: authorMap.get(p.authorId) }));
 }
 
-export async function toggleLike(postId: string, uid: string, liked: boolean): Promise<void> {
-  const ref = doc(db, "posts", postId);
-  await updateDoc(ref, {
-    likes: liked ? arrayRemove(uid) : arrayUnion(uid),
-  });
+export async function toggleLike(postId: string, uid: string): Promise<void> {
+  const ref = adminDb.collection("posts").doc(postId);
+  const snap = await ref.get();
+  if (!snap.exists) return;
+  const likes: string[] = snap.data()!.likes ?? [];
+  if (likes.includes(uid)) {
+    await ref.update({ likes: FieldValue.arrayRemove(uid) });
+  } else {
+    await ref.update({ likes: FieldValue.arrayUnion(uid) });
+  }
 }

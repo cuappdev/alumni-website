@@ -8,9 +8,7 @@ import { z } from "zod";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useAuth } from "@/lib/auth/context";
-import { createUserProfile } from "@/lib/firestore/users";
-import { getInvitationByEmail, markInvitationUsed } from "@/lib/firestore/invitations";
-import { ADMIN_EMAIL } from "@/lib/constants";
+import { OrganizationSelector } from "@/components/profile/OrganizationSelector";
 import { uploadProfilePicture } from "@/lib/storage/upload";
 import { AppDevRole } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -19,7 +17,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppDevRoleSelector } from "@/components/profile/AppDevRoleSelector";
-import { CompanySelector } from "@/components/profile/CompanySelector";
 import { toast } from "sonner";
 
 const schema = z.object({
@@ -27,30 +24,29 @@ const schema = z.object({
   lastName: z.string().min(1, "Required"),
   classYear: z.coerce.number().int().min(1900).max(2100),
   bio: z.string().optional(),
-  phoneNumber: z.string().refine((v) => !v || /^\+?[\d\s\-()+]{7,20}$/.test(v), "Invalid phone number").optional(),
+  phoneNumber: z
+    .string()
+    .refine((v) => !v || /^\+?[\d\s\-()+]{7,20}$/.test(v), "Invalid phone number")
+    .optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
 export function CompleteProfileForm() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [profileFile, setProfileFile] = useState<File | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<AppDevRole[]>([]);
-  const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
-
-  const displayParts = user?.displayName?.split(" ") ?? [];
-  const defaultFirst = displayParts[0] ?? "";
-  const defaultLast = displayParts.slice(1).join(" ");
+  const [selectedOrganizationIds, setSelectedOrganizationIds] = useState<string[]>([]);
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { firstName: defaultFirst, lastName: defaultLast },
   });
 
   useEffect(() => {
@@ -58,52 +54,44 @@ export function CompleteProfileForm() {
     if (!user) router.push("/login");
   }, [loading, user, router]);
 
+  useEffect(() => {
+    if (profile) reset({ firstName: profile.firstName, lastName: profile.lastName });
+  }, [profile, reset]);
+
   const onSubmit = async (data: FormData) => {
     if (!user) return;
     setSubmitting(true);
     try {
-      const email = user.email!;
-      const isAdmin = email === ADMIN_EMAIL;
-
-      let invCode: string | null = null;
-      if (!isAdmin) {
-        const inv = await getInvitationByEmail(email);
-        if (!inv || inv.usedAt) {
-          await signOut(auth);
-          toast.error("Invitation not found or already used.");
-          router.push("/login");
-          return;
-        }
-        invCode = inv.code;
-      }
-
       let profilePictureUrl: string | undefined = user.photoURL ?? undefined;
       if (profileFile) {
         profilePictureUrl = await uploadProfilePicture(user.uid, profileFile);
       }
 
-      await createUserProfile(user.uid, {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email,
-        classYear: data.classYear,
-        bio: data.bio || undefined,
-        phoneNumber: data.phoneNumber || undefined,
-        companyIds: selectedCompanyIds,
-        appDevRoles: selectedRoles,
-        emailNotifications: true,
-        profilePictureUrl,
-        role: isAdmin ? "admin" : undefined,
-      });
-
-      if (invCode) await markInvitationUsed(invCode);
-
-      const idToken = await user.getIdToken();
-      await fetch("/api/session", {
+      const res = await fetch("/api/me/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          classYear: data.classYear,
+          bio: data.bio || undefined,
+          phoneNumber: data.phoneNumber || undefined,
+          organizationIds: selectedOrganizationIds,
+          appDevRoles: selectedRoles,
+          profilePictureUrl,
+        }),
       });
+
+      if (!res.ok) {
+        const { error } = await res.json();
+        if (res.status === 403) {
+          await signOut(auth);
+          toast.error(error || "Invitation not found.");
+          router.push("/login");
+          return;
+        }
+        throw new Error(error);
+      }
 
       router.push("/feed");
     } catch (err) {
@@ -175,7 +163,10 @@ export function CompleteProfileForm() {
           <div className="space-y-1">
             <Label>Organizations</Label>
             <p className="text-xs text-muted-foreground">Where have you worked?</p>
-            <CompanySelector selectedIds={selectedCompanyIds} onChange={setSelectedCompanyIds} />
+            <OrganizationSelector
+              selectedIds={selectedOrganizationIds}
+              onChange={setSelectedOrganizationIds}
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="phone">Phone (optional)</Label>
@@ -187,7 +178,9 @@ export function CompleteProfileForm() {
           <div className="space-y-1">
             <Label htmlFor="picture">Profile picture (optional)</Label>
             {user.photoURL && !profileFile && (
-              <p className="text-xs text-muted-foreground">Using your Google photo — upload to replace.</p>
+              <p className="text-xs text-muted-foreground">
+                Using your Google photo — upload to replace.
+              </p>
             )}
             <Input
               id="picture"

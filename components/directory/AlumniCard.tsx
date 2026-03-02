@@ -2,18 +2,18 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { UserProfile, Company } from "@/types";
+import { UserProfile, Organization } from "@/types";
 
 interface AlumniCardProps {
   profile: UserProfile;
-  companies: Company[];
+  organizations: Organization[];
 }
 
-export function AlumniCard({ profile, companies }: AlumniCardProps) {
+export function AlumniCard({ profile, organizations }: AlumniCardProps) {
   const fullName = `${profile.firstName} ${profile.lastName}`;
   const initials = `${profile.firstName[0]}${profile.lastName[0]}`.toUpperCase();
 
-  const alumniCompanies = companies.filter((c) => profile.companyIds.includes(c.id));
+  const alumniOrganizations = organizations.filter((o) => profile.organizationIds.includes(o.id));
 
   return (
     <Link href={`/profile/${profile.uid}`}>
@@ -29,11 +29,11 @@ export function AlumniCard({ profile, companies }: AlumniCardProps) {
             {profile.bio && (
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{profile.bio}</p>
             )}
-            {alumniCompanies.length > 0 && (
+            {alumniOrganizations.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
-                {alumniCompanies.map((c) => (
-                  <Badge key={c.id} variant="secondary" className="text-xs">
-                    {c.name}
+                {alumniOrganizations.map((o) => (
+                  <Badge key={o.id} variant="secondary" className="text-xs">
+                    {o.name}
                   </Badge>
                 ))}
               </div>

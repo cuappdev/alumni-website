@@ -2,10 +2,8 @@
 
 import { use, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
-import { getUserProfile } from "@/lib/firestore/users";
-import { getCompanies } from "@/lib/firestore/companies";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { UserProfile, Company } from "@/types";
+import { UserProfile, Organization } from "@/types";
 
 export default function ProfilePage({
   params,
@@ -14,17 +12,22 @@ export default function ProfilePage({
 }) {
   const { uid } = use(params);
   const [profile, setProfile] = useState<UserProfile | null | "loading">("loading");
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
 
   useEffect(() => {
-    Promise.all([getUserProfile(uid), getCompanies()]).then(([p, c]) => {
+    Promise.all([
+      fetch(`/api/users/${uid}`).then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/organizations").then((r) => r.json()),
+    ]).then(([p, o]) => {
       setProfile(p);
-      setCompanies(c);
+      setOrganizations(o);
     });
   }, [uid]);
 
   if (profile === "loading") {
-    return <div className="max-w-2xl mx-auto py-12 text-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="max-w-2xl mx-auto py-12 text-center text-muted-foreground">Loading…</div>
+    );
   }
 
   if (!profile) {
@@ -33,7 +36,7 @@ export default function ProfilePage({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <ProfileHeader initialProfile={profile} companies={companies} />
+      <ProfileHeader initialProfile={profile} organizations={organizations} />
     </div>
   );
 }

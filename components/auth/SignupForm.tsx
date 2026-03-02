@@ -7,39 +7,36 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
-import { createUserProfile } from "@/lib/firestore/users";
-import { getInvitationByCode, markInvitationUsed } from "@/lib/firestore/invitations";
-import { uploadProfilePicture } from "@/lib/storage/upload";
-import { Invitation, AppDevRole } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AppDevRoleSelector } from "@/components/profile/AppDevRoleSelector";
-import { CompanySelector } from "@/components/profile/CompanySelector";
 import { toast } from "sonner";
 import Link from "next/link";
 
-const schema = z.object({
-  firstName: z.string().min(1, "Required"),
-  lastName: z.string().min(1, "Required"),
-  password: z.string().min(6),
-  classYear: z.coerce.number().int().min(1900).max(2100),
-  bio: z.string().optional(),
-  phoneNumber: z.string().refine((v) => !v || /^\+?[\d\s\-()+]{7,20}$/.test(v), "Invalid phone number").optional(),
-});
+const schema = z
+  .object({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type FormData = z.infer<typeof schema>;
+
+interface InvitationInfo {
+  email: string;
+  firstName: string;
+  lastName: string;
+}
 
 export function SignupForm({ code }: { code?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [invitation, setInvitation] = useState<Invitation | null>(null);
-  const [profileFile, setProfileFile] = useState<File | null>(null);
-  const [selectedRoles, setSelectedRoles] = useState<AppDevRole[]>([]);
-  const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
+  const [invitation, setInvitation] = useState<InvitationInfo | null>(null);
 
   const {
     register,
@@ -52,10 +49,12 @@ export function SignupForm({ code }: { code?: string }) {
       setChecking(false);
       return;
     }
-    getInvitationByCode(code).then((inv) => {
-      setInvitation(inv && !inv.usedAt ? inv : null);
-      setChecking(false);
-    });
+    fetch(`/api/invitations/validate?code=${code}`)
+      .then((r) => r.json())
+      .then(({ invitation: inv }) => {
+        setInvitation(inv ?? null);
+        setChecking(false);
+      });
   }, [code]);
 
   const onSubmit = async (data: FormData) => {
@@ -63,36 +62,15 @@ export function SignupForm({ code }: { code?: string }) {
     setLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, invitation.email, data.password);
-      const uid = cred.user.uid;
-
-      let profilePictureUrl: string | undefined;
-      if (profileFile) {
-        profilePictureUrl = await uploadProfilePicture(uid, profileFile);
-      }
-
-      await createUserProfile(uid, {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: invitation.email,
-        classYear: data.classYear,
-        bio: data.bio || undefined,
-        phoneNumber: data.phoneNumber || undefined,
-        companyIds: selectedCompanyIds,
-        appDevRoles: selectedRoles,
-        emailNotifications: true,
-        profilePictureUrl,
-      });
-
-      await markInvitationUsed(invitation.code);
-
       const idToken = await cred.user.getIdToken();
-      await fetch("/api/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
+      // Step 1: create signed cookie
+      await fetch("/api/login", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${idToken}` },
       });
-
-      router.push("/feed");
+      // Step 2: create user stub
+      await fetch("/api/session", { method: "POST" });
+      router.push("/signup/complete");
     } catch (err) {
       console.error(err);
       toast.error("Sign-up failed. Please try again.");
@@ -134,26 +112,10 @@ export function SignupForm({ code }: { code?: string }) {
     <Card>
       <CardHeader>
         <CardTitle>Create your account</CardTitle>
-        <CardDescription>Complete your profile to join the alumni network</CardDescription>
+        <CardDescription>Set a password to get started. You&apos;ll complete your profile next.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" {...register("firstName")} />
-              {errors.firstName && (
-                <p className="text-sm text-destructive">{errors.firstName.message}</p>
-              )}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" {...register("lastName")} />
-              {errors.lastName && (
-                <p className="text-sm text-destructive">{errors.lastName.message}</p>
-              )}
-            </div>
-          </div>
           <div className="space-y-1">
             <Label>Email</Label>
             <Input value={invitation.email} readOnly className="bg-muted" />
@@ -166,51 +128,14 @@ export function SignupForm({ code }: { code?: string }) {
             )}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="classYear">Class year</Label>
-            <Input id="classYear" type="number" {...register("classYear")} />
-            {errors.classYear && (
-              <p className="text-sm text-destructive">{errors.classYear.message}</p>
+            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <Input id="confirmPassword" type="password" {...register("confirmPassword")} />
+            {errors.confirmPassword && (
+              <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
             )}
-          </div>
-          <div className="space-y-1">
-            <Label>AppDev roles</Label>
-            <AppDevRoleSelector selected={selectedRoles} onChange={setSelectedRoles} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="bio">Bio (optional)</Label>
-            <Textarea
-              id="bio"
-              rows={3}
-              placeholder="Tell the community about yourself. What did you do on AppDev? Where are you now? You can always edit this later."
-              {...register("bio")}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Organizations</Label>
-            <p className="text-xs text-muted-foreground">Where have you worked?</p>
-            <CompanySelector
-              selectedIds={selectedCompanyIds}
-              onChange={setSelectedCompanyIds}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="phone">Phone (optional)</Label>
-            <Input id="phone" type="tel" {...register("phoneNumber")} />
-            {errors.phoneNumber && (
-              <p className="text-sm text-destructive">{errors.phoneNumber.message}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="picture">Profile picture (optional)</Label>
-            <Input
-              id="picture"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setProfileFile(e.target.files?.[0] ?? null)}
-            />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating account…" : "Create account"}
+            {loading ? "Creating account…" : "Continue"}
           </Button>
         </form>
       </CardContent>

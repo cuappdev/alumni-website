@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
-import { getUserProfile } from "@/lib/firestore/users";
 import { UserProfile } from "@/types";
 
 interface AuthContextValue {
@@ -29,7 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const userProfile = await getUserProfile(firebaseUser.uid);
+        const res = await fetch("/api/me");
+        const userProfile = res.ok ? await res.json() : null;
         setProfile(userProfile);
       } else {
         setProfile(null);

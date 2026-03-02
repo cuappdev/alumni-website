@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { updateUserProfile } from "@/lib/firestore/users";
 import { uploadProfilePicture } from "@/lib/storage/upload";
 import { UserProfile, AppDevRole } from "@/types";
 import {
@@ -20,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "./ImageUpload";
 import { AppDevRoleSelector } from "./AppDevRoleSelector";
-import { CompanySelector } from "./CompanySelector";
+import { OrganizationSelector } from "./OrganizationSelector";
 import { toast } from "sonner";
 
 const schema = z.object({
@@ -28,7 +27,10 @@ const schema = z.object({
   lastName: z.string().min(1, "Required"),
   classYear: z.coerce.number().int().min(1900).max(2100),
   bio: z.string().optional(),
-  phoneNumber: z.string().refine((v) => !v || /^\+?[\d\s\-()+]{7,20}$/.test(v), "Invalid phone number").optional(),
+  phoneNumber: z
+    .string()
+    .refine((v) => !v || /^\+?[\d\s\-()+]{7,20}$/.test(v), "Invalid phone number")
+    .optional(),
   emailNotifications: z.boolean(),
 });
 
@@ -44,7 +46,9 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
   const [loading, setLoading] = useState(false);
   const [newFile, setNewFile] = useState<File | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<AppDevRole[]>(profile.appDevRoles ?? []);
-  const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>(profile.companyIds);
+  const [selectedOrganizationIds, setSelectedOrganizationIds] = useState<string[]>(
+    profile.organizationIds
+  );
 
   const {
     register,
@@ -74,10 +78,15 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
         bio: data.bio || undefined,
         phoneNumber: data.phoneNumber || undefined,
         appDevRoles: selectedRoles,
-        companyIds: selectedCompanyIds,
+        organizationIds: selectedOrganizationIds,
         profilePictureUrl,
       };
-      await updateUserProfile(profile.uid, updates);
+      const res = await fetch("/api/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed");
       onUpdated(updates);
       toast.success("Profile updated!");
       setOpen(false);
@@ -144,7 +153,10 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
           <div className="space-y-1">
             <Label>Organizations</Label>
             <p className="text-xs text-muted-foreground">Where have you worked?</p>
-            <CompanySelector selectedIds={selectedCompanyIds} onChange={setSelectedCompanyIds} />
+            <OrganizationSelector
+              selectedIds={selectedOrganizationIds}
+              onChange={setSelectedOrganizationIds}
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="edit-phone">Phone (optional)</Label>

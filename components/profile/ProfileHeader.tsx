@@ -6,21 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ProfileEditForm } from "./ProfileEditForm";
 import { useAuth } from "@/lib/auth/context";
-import { UserProfile, Company } from "@/types";
+import { UserProfile, Organization } from "@/types";
 
 interface ProfileHeaderProps {
   initialProfile: UserProfile;
-  companies: Company[];
+  organizations: Organization[];
 }
 
-export function ProfileHeader({ initialProfile, companies }: ProfileHeaderProps) {
+export function ProfileHeader({ initialProfile, organizations }: ProfileHeaderProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState(initialProfile);
   const isOwner = user?.uid === profile.uid;
 
   const fullName = `${profile.firstName} ${profile.lastName}`;
   const initials = `${profile.firstName[0]}${profile.lastName[0]}`.toUpperCase();
-  const profileCompanies = companies.filter((c) => profile.companyIds.includes(c.id));
+  const profileOrganizations = organizations.filter((o) => profile.organizationIds.includes(o.id));
   const roles = profile.appDevRoles ?? [];
 
   return (
@@ -58,7 +58,7 @@ export function ProfileHeader({ initialProfile, companies }: ProfileHeaderProps)
 
       {profile.bio && <p className="text-sm whitespace-pre-wrap">{profile.bio}</p>}
 
-      {profileCompanies.length > 0 && (
+      {profileOrganizations.length > 0 && (
         <>
           <Separator />
           <div>
@@ -66,9 +66,9 @@ export function ProfileHeader({ initialProfile, companies }: ProfileHeaderProps)
               Organizations
             </p>
             <div className="flex flex-wrap gap-2">
-              {profileCompanies.map((c) => (
-                <Badge key={c.id} variant="secondary">
-                  {c.name}
+              {profileOrganizations.map((o) => (
+                <Badge key={o.id} variant="secondary">
+                  {o.name}
                 </Badge>
               ))}
             </div>

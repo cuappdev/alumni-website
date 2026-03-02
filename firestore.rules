@@ -14,11 +14,10 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Companies: any signed-in user can read; admin-only write
-    match /companies/{companyId} {
+    // Organizations: any signed-in user can read; all writes go through API route
+    match /organizations/{orgId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+      allow write: if false;
     }
 
     // Invitations: doc ID is an unguessable UUID code, so reads are open.

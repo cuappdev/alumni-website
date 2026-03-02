@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { subscribeToPosts } from "@/lib/firestore/posts";
 import { Post } from "@/types";
 import { PostCard } from "./PostCard";
 
@@ -9,8 +8,10 @@ export function PostList() {
   const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
-    const unsubscribe = subscribeToPosts(setPosts);
-    return unsubscribe;
+    fetch("/api/posts")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setPosts)
+      .catch(console.error);
   }, []);
 
   if (posts.length === 0) {

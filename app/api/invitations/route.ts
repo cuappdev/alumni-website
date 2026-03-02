@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { Resend } from "resend";
 import { Timestamp } from "firebase-admin/firestore";
+import { getTokens } from "next-firebase-auth-edge";
+import { authConfig } from "@/lib/firebase/auth-edge";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const isDev = process.env.NODE_ENV === "development";
@@ -28,22 +30,17 @@ async function sendInviteEmail(to: string, signupLink: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get("__session")?.value;
-    if (!sessionCookie) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const tokens = await getTokens(request.cookies, authConfig);
+    if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-    const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
-    const userData = userDoc.data();
-
-    if (!userData || userData.role !== "admin") {
+    const userDoc = await adminDb.collection("users").doc(tokens.decodedToken.uid).get();
+    if (userDoc.data()?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { email } = await request.json();
-    if (!email) {
-      return NextResponse.json({ error: "Email required" }, { status: 400 });
+    const { email, firstName, lastName } = await request.json();
+    if (!email || !firstName || !lastName) {
+      return NextResponse.json({ error: "Email, firstName, and lastName are required" }, { status: 400 });
     }
 
     const code = crypto.randomUUID();
@@ -54,8 +51,10 @@ export async function POST(request: NextRequest) {
     await adminDb.collection("invitations").doc(code).set({
       code,
       email,
+      firstName,
+      lastName,
       sentAt: Timestamp.now(),
-      sentBy: decoded.uid,
+      sentBy: tokens.decodedToken.uid,
     });
 
     return NextResponse.json({ ok: true });

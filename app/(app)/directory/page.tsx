@@ -1,25 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { searchUsers } from "@/lib/firestore/users";
-import { getCompanies } from "@/lib/firestore/companies";
-import { UserProfile, Company } from "@/types";
+import { UserProfile, Organization } from "@/types";
 import { DirectoryFilters } from "@/components/directory/DirectoryFilters";
 import { AlumniCard } from "@/components/directory/AlumniCard";
 
 export default function DirectoryPage() {
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [nameFilter, setNameFilter] = useState("");
   const [classYearFilter, setClassYearFilter] = useState("");
 
   useEffect(() => {
-    searchUsers().then(setAllUsers);
-    getCompanies().then(setCompanies);
+    Promise.all([
+      fetch("/api/users").then((r) => r.json()),
+      fetch("/api/organizations").then((r) => r.json()),
+    ]).then(([users, orgs]) => {
+      setAllUsers(users);
+      setOrganizations(orgs);
+    });
   }, []);
 
   const filtered = allUsers.filter((u) => {
-    const matchName = !nameFilter || `${u.firstName} ${u.lastName}`.toLowerCase().includes(nameFilter.toLowerCase());
+    const matchName =
+      !nameFilter ||
+      `${u.firstName} ${u.lastName}`.toLowerCase().includes(nameFilter.toLowerCase());
     const matchYear = !classYearFilter || u.classYear === parseInt(classYearFilter);
     return matchName && matchYear;
   });
@@ -35,7 +40,7 @@ export default function DirectoryPage() {
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((u) => (
-          <AlumniCard key={u.uid} profile={u} companies={companies} />
+          <AlumniCard key={u.uid} profile={u} organizations={organizations} />
         ))}
       </div>
       {filtered.length === 0 && (

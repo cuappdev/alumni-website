@@ -1,49 +1,67 @@
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  collection,
-  getDocs,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { adminDb } from "@/lib/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { UserProfile } from "@/types";
+
+function serializeUser(data: FirebaseFirestore.DocumentData): UserProfile {
+  return {
+    ...data,
+    createdAt: data.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+    updatedAt: data.updatedAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+  } as UserProfile;
+}
+
+export async function createUserStub(
+  uid: string,
+  data: { email: string; firstName: string; lastName: string }
+): Promise<void> {
+  await adminDb.collection("users").doc(uid).set({
+    ...data,
+    uid,
+    profileComplete: false,
+    organizationIds: [],
+    appDevRoles: [],
+    emailNotifications: true,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+}
 
 export async function createUserProfile(
   uid: string,
   data: Omit<UserProfile, "uid" | "createdAt" | "updatedAt">
 ): Promise<void> {
-  const ref = doc(db, "users", uid);
-  await setDoc(ref, {
-    ...data,
+  const { profilePictureUrl, bio, phoneNumber, role, ...rest } = data;
+  await adminDb.collection("users").doc(uid).set({
+    ...rest,
+    ...(profilePictureUrl && { profilePictureUrl }),
+    ...(bio && { bio }),
+    ...(phoneNumber && { phoneNumber }),
+    ...(role && { role }),
     uid,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
-  const ref = doc(db, "users", uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return null;
-  return snap.data() as UserProfile;
+  const snap = await adminDb.collection("users").doc(uid).get();
+  if (!snap.exists) return null;
+  return serializeUser(snap.data()!);
 }
 
 export async function updateUserProfile(
   uid: string,
   data: Partial<Omit<UserProfile, "uid" | "createdAt">>
 ): Promise<void> {
-  const ref = doc(db, "users", uid);
-  await updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
+  await adminDb.collection("users").doc(uid).update({ ...data, updatedAt: FieldValue.serverTimestamp() });
 }
 
 export async function searchUsers(
   nameFilter?: string,
   classYearFilter?: number
 ): Promise<UserProfile[]> {
-  const snap = await getDocs(collection(db, "users"));
-  let users = snap.docs.map((d) => d.data() as UserProfile);
+  const snap = await adminDb.collection("users").where("profileComplete", "==", true).get();
+  let users = snap.docs.map((d) => serializeUser(d.data()));
 
   if (nameFilter) {
     const lower = nameFilter.toLowerCase();

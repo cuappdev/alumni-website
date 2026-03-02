@@ -13,9 +13,6 @@ import {
   AuthError,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
-import { getInvitationByEmail } from "@/lib/firestore/invitations";
-import { getUserProfile } from "@/lib/firestore/users";
-import { ADMIN_EMAIL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,14 +26,6 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-async function createSession(idToken: string) {
-  await fetch("/api/session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken }),
-  });
-}
-
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,12 +38,24 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  const signInWithToken = async (idToken: string) => {
+    // Step 1: let auth-edge create the signed cookie
+    await fetch("/api/login", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+    // Step 2: create user stub if needed, get profileComplete status
+    return fetch("/api/session", { method: "POST" }).then((r) =>
+      r.ok ? r.json() : Promise.reject(r)
+    );
+  };
+
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
       const cred = await signInWithEmailAndPassword(auth, data.email, data.password);
       const idToken = await cred.user.getIdToken();
-      await createSession(idToken);
+      await signInWithToken(idToken);
       router.push(nextPath);
     } catch {
       toast.error("Invalid email or password.");
@@ -68,32 +69,34 @@ export function LoginForm() {
     try {
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
-      const email = cred.user.email!;
+      const idToken = await cred.user.getIdToken();
 
-      // Enforce invitation requirement (bypass for admin)
-      if (email !== ADMIN_EMAIL) {
-        const inv = await getInvitationByEmail(email);
-        if (!inv || inv.usedAt) {
-          await signOut(auth);
-          toast.error("No account found.", {
-            description: "Sign up with the link in your invitation email, or ask an admin to send you one.",
-          });
-          return;
-        }
-      }
-
-      // Returning Google user who already completed their profile
-      const profile = await getUserProfile(cred.user.uid);
-      if (profile) {
-        const idToken = await cred.user.getIdToken();
-        await createSession(idToken);
-        router.push(nextPath);
+      let sessionRes: Response;
+      try {
+        // Step 1: create the signed cookie
+        await fetch("/api/login", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        // Step 2: stub creation
+        sessionRes = await fetch("/api/session", { method: "POST" });
+      } catch {
+        await signOut(auth);
+        toast.error("Sign-in failed. Please try again.");
         return;
       }
 
-      // New Google user — send them to complete their profile
-      // (no session cookie yet; created after profile completion)
-      router.push("/signup/complete");
+      if (!sessionRes.ok) {
+        await signOut(auth);
+        toast.error("No account found.", {
+          description:
+            "Sign up with the link in your invitation email, or ask an admin to send you one.",
+        });
+        return;
+      }
+
+      const { profileComplete } = await sessionRes.json();
+      router.push(profileComplete ? nextPath : "/signup/complete");
     } catch (err) {
       const code = (err as AuthError)?.code;
       if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
@@ -141,7 +144,8 @@ export function LoginForm() {
           Continue with Google
         </Button>
         <p className="text-center text-sm text-muted-foreground">
-          <span className="font-medium">Need an account?</span> Click the link in your invitation email, or ask an admin to send you one.
+          <span className="font-medium">Need an account?</span> Click the link in your invitation
+          email, or ask an admin to send you one.
         </p>
       </CardContent>
     </Card>

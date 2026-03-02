@@ -18,6 +18,7 @@ next-env.d.ts
 .nyc_output
 
 # ---- Firebase ----
+.emulator-data/
 firebase-service-account.json
 firebase-debug.log
 firestore-debug.log

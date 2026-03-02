@@ -19,16 +19,18 @@ import { toast } from "sonner";
 const navLinks = [
   { href: "/feed", label: "Feed" },
   { href: "/directory", label: "Directory" },
-  { href: "/companies", label: "Companies" },
+  { href: "/organizations", label: "Organizations" },
 ];
 
+const adminLink = { href: "/admin", label: "Admin" };
+
 export function Header() {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const router = useRouter();
 
   const handleLogout = async () => {
     await signOut(auth);
-    await fetch("/api/session", { method: "DELETE" });
+    await fetch("/api/logout", { method: "GET" });
     toast.success("Signed out.");
     router.push("/login");
   };
@@ -57,6 +59,14 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            {isAdmin && (
+              <Link
+                href={adminLink.href}
+                className="rounded-md px-3 py-1.5 text-sm font-medium hover:bg-muted"
+              >
+                {adminLink.label}
+              </Link>
+            )}
           </nav>
         </div>
 
