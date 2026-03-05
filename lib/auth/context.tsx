@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const res = await fetch("/api/me");
+        const res = await fetch("/api/user");
         const userProfile = res.ok ? await res.json() : null;
         setProfile(userProfile);
       } else {

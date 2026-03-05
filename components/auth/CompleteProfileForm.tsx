@@ -9,7 +9,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useAuth } from "@/lib/auth/context";
 import { OrganizationSelector } from "@/components/profile/OrganizationSelector";
-import { uploadProfilePicture } from "@/lib/storage/upload";
+import { ImageUpload } from "@/components/profile/ImageUpload";
 import { AppDevRole } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,7 @@ export function CompleteProfileForm() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const [profileFile, setProfileFile] = useState<File | null>(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(undefined);
   const [selectedRoles, setSelectedRoles] = useState<AppDevRole[]>([]);
   const [selectedOrganizationIds, setSelectedOrganizationIds] = useState<string[]>([]);
 
@@ -62,12 +62,7 @@ export function CompleteProfileForm() {
     if (!user) return;
     setSubmitting(true);
     try {
-      let profilePictureUrl: string | undefined = user.photoURL ?? undefined;
-      if (profileFile) {
-        profilePictureUrl = await uploadProfilePicture(user.uid, profileFile);
-      }
-
-      const res = await fetch("/api/me/complete", {
+      const res = await fetch("/api/user/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -78,7 +73,7 @@ export function CompleteProfileForm() {
           phoneNumber: data.phoneNumber || undefined,
           organizationIds: selectedOrganizationIds,
           appDevRoles: selectedRoles,
-          profilePictureUrl,
+          profilePictureUrl: profilePictureUrl ?? user.photoURL ?? undefined,
         }),
       });
 
@@ -175,20 +170,12 @@ export function CompleteProfileForm() {
               <p className="text-sm text-destructive">{errors.phoneNumber.message}</p>
             )}
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="picture">Profile picture (optional)</Label>
-            {user.photoURL && !profileFile && (
-              <p className="text-xs text-muted-foreground">
-                Using your Google photo — upload to replace.
-              </p>
-            )}
-            <Input
-              id="picture"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setProfileFile(e.target.files?.[0] ?? null)}
-            />
-          </div>
+          <ImageUpload
+            currentUrl={user.photoURL ?? undefined}
+            onUploaded={setProfilePictureUrl}
+            name={user.displayName ?? undefined}
+            label="Profile picture (optional)"
+          />
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Saving…" : "Complete sign-up"}
           </Button>

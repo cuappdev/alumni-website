@@ -16,6 +16,7 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,11 +45,34 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
     (o) => o.name.toLowerCase() === search.trim().toLowerCase()
   );
   const showDropdown = open && (filtered.length > 0 || (search.trim() && !exactMatch));
+  // Total items in dropdown: filtered orgs + optional "Create" row
+  const dropdownCount = filtered.length + (search.trim() && !exactMatch ? 1 : 0);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showDropdown) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.min(i + 1, dropdownCount - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlightedIndex < filtered.length) {
+        handleSelect(filtered[highlightedIndex]);
+      } else {
+        handleCreate();
+      }
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  };
 
   const handleSelect = (org: Organization) => {
     onChange([...selectedIds, org.id]);
     setSearch("");
     setOpen(false);
+    setHighlightedIndex(0);
   };
 
   const handleRemove = (id: string) => {
@@ -98,20 +122,22 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
         <Input
           placeholder="Search organizations…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setHighlightedIndex(0); setOpen(true); }}
           onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
         />
         {showDropdown && (
           <div className="absolute z-10 top-full mt-1 w-full bg-background border rounded-md shadow-md max-h-48 overflow-y-auto">
-            {filtered.map((o) => (
+            {filtered.map((o, i) => (
               <button
                 key={o.id}
                 type="button"
-                className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-muted ${i === highlightedIndex ? "bg-muted" : ""}`}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   handleSelect(o);
                 }}
+                onMouseEnter={() => setHighlightedIndex(i)}
               >
                 {o.name}
               </button>
@@ -119,11 +145,12 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
             {search.trim() && !exactMatch && (
               <button
                 type="button"
-                className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2 text-primary border-t"
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2 text-primary border-t ${highlightedIndex === filtered.length ? "bg-muted" : ""}`}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   handleCreate();
                 }}
+                onMouseEnter={() => setHighlightedIndex(filtered.length)}
                 disabled={creating}
               >
                 <Plus className="h-4 w-4" />

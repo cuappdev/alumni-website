@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { uploadProfilePicture } from "@/lib/storage/upload";
 import { UserProfile, AppDevRole } from "@/types";
 import {
   Dialog,
@@ -44,7 +43,9 @@ interface ProfileEditFormProps {
 export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [newFile, setNewFile] = useState<File | null>(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(
+    profile.profilePictureUrl,
+  );
   const [selectedRoles, setSelectedRoles] = useState<AppDevRole[]>(profile.appDevRoles ?? []);
   const [selectedOrganizationIds, setSelectedOrganizationIds] = useState<string[]>(
     profile.organizationIds
@@ -69,10 +70,6 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      let profilePictureUrl = profile.profilePictureUrl;
-      if (newFile) {
-        profilePictureUrl = await uploadProfilePicture(profile.uid, newFile);
-      }
       const updates = {
         ...data,
         bio: data.bio || undefined,
@@ -81,7 +78,7 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
         organizationIds: selectedOrganizationIds,
         profilePictureUrl,
       };
-      const res = await fetch("/api/me", {
+      const res = await fetch("/api/user", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -111,7 +108,8 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <ImageUpload
             currentUrl={profile.profilePictureUrl}
-            onFileSelect={setNewFile}
+            onUploaded={setProfilePictureUrl}
+            name={`${profile.firstName} ${profile.lastName}`}
             label="Profile picture"
           />
           <div className="grid grid-cols-2 gap-3">
