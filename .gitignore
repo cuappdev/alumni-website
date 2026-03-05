@@ -25,6 +25,7 @@ firestore-debug.log
 storage-debug.log
 ui-debug.log
 .firebase/
+firebase-export-*
 
 # ---- Environment / Secrets ----
 *.pem
