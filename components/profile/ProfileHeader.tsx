@@ -64,13 +64,13 @@ export function ProfileHeader({ initialProfile, initialCompanies }: ProfileHeade
             )}
           </div>
           <p className="text-muted-foreground text-sm">{classLabel(profile.classYear, profile.graduated)}</p>
-          <p className="text-sm text-muted-foreground">{profile.email}</p>
           {cityName && (
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" />
               {cityName}
             </p>
           )}
+          <p className="text-sm text-muted-foreground">{profile.email}</p>
           {profile.phoneNumber && (
             <p className="text-sm text-muted-foreground">{formatPhone(profile.phoneNumber)}</p>
           )}
