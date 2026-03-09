@@ -21,33 +21,39 @@ async function sendInviteEmail(params: {
     console.log("\n📬 [DEV] Invitation email (not sent)");
     console.log(`   To:        ${params.to}`);
     console.log(`   Link:      ${params.invitationLink}`);
-    console.log(`   Inviter:   ${params.inviterFirstName} ${params.inviterLastName} <${params.inviterEmail}>\n`);
+    console.log(
+      `   Inviter:   ${params.inviterFirstName} ${params.inviterLastName} <${params.inviterEmail}>\n`,
+    );
     return;
-  }
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  await resend.emails.send({
-    from: "AppDev Alumni <noreply@alumni.cornellappdev.com>",
-    to: params.to,
-    subject: "You're invited to join the AppDev Alumni Network",
-    template: {
-      id: "invitation-email",
-      variables: {
-        firstName: params.firstName,
-        invitationLink: params.invitationLink,
-        inviterEmail: params.inviterEmail,
-        inviterFirstName: params.inviterFirstName,
-        inviterLastName: params.inviterLastName,
+  } else {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: "AppDev Alumni <noreply@alumni.cornellappdev.com>",
+      to: params.to,
+      template: {
+        id: "invitation-email",
+        variables: {
+          firstName: params.firstName,
+          invitationLink: params.invitationLink,
+          inviterEmail: params.inviterEmail,
+          inviterFirstName: params.inviterFirstName,
+          inviterLastName: params.inviterLastName,
+        },
       },
-    },
-  });
+    });
+  }
 }
 
 export async function GET(request: NextRequest) {
   try {
     const tokens = await getTokens(request.cookies, authConfig);
-    if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!tokens)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const inviterDoc = await adminDb.collection("users").doc(tokens.decodedToken.uid).get();
+    const inviterDoc = await adminDb
+      .collection("users")
+      .doc(tokens.decodedToken.uid)
+      .get();
     if (inviterDoc.data()?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -56,16 +62,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(invitations);
   } catch (error) {
     console.error("List invitations error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const tokens = await getTokens(request.cookies, authConfig);
-    if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!tokens)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const inviterDoc = await adminDb.collection("users").doc(tokens.decodedToken.uid).get();
+    const inviterDoc = await adminDb
+      .collection("users")
+      .doc(tokens.decodedToken.uid)
+      .get();
     const inviterData = inviterDoc.data();
     if (inviterData?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -73,7 +86,10 @@ export async function POST(request: NextRequest) {
 
     const { email, firstName, lastName } = await request.json();
     if (!email || !firstName || !lastName) {
-      return NextResponse.json({ error: "Email, firstName, and lastName are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Email, firstName, and lastName are required" },
+        { status: 400 },
+      );
     }
 
     const code = crypto.randomUUID();
@@ -100,6 +116,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Invitation error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

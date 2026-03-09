@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
@@ -48,7 +49,8 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <MobileSidebar />
-          <Link href="/feed" className="font-semibold text-sm">
+          <Link href="/feed" className="flex items-center gap-2 font-semibold text-sm">
+            <Image src="/appdev.svg" alt="AppDev" width={20} height={20} />
             AppDev Alumni
           </Link>
           <nav className="hidden md:flex items-center gap-1">
