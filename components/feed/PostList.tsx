@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Post } from "@/types";
 import { PostCard } from "./PostCard";
 
-export function PostList() {
+export function PostList({ refreshKey }: { refreshKey?: number }) {
   const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
@@ -12,7 +12,7 @@ export function PostList() {
       .then((r) => (r.ok ? r.json() : []))
       .then(setPosts)
       .catch(console.error);
-  }, []);
+  }, [refreshKey]);
 
   if (posts.length === 0) {
     return <p className="text-center text-muted-foreground py-12">No posts yet. Be the first!</p>;

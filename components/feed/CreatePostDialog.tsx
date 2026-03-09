@@ -25,7 +25,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export function CreatePostDialog() {
+export function CreatePostDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +48,7 @@ export function CreatePostDialog() {
       toast.success("Post created!");
       reset();
       setOpen(false);
+      onSuccess?.();
     } catch {
       toast.error("Failed to create post.");
     } finally {
