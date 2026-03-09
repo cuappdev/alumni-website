@@ -7,12 +7,14 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 const schema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
   email: z.string().email(),
+  graduated: z.enum(["true", "false"]),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -24,6 +26,7 @@ export function InviteForm({ onSuccess }: { onSuccess?: () => void }) {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
@@ -33,7 +36,7 @@ export function InviteForm({ onSuccess }: { onSuccess?: () => void }) {
       const res = await fetch("/api/invitations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, graduated: data.graduated === "true" }),
       });
       if (!res.ok) {
         const body = await res.json();
@@ -82,6 +85,21 @@ export function InviteForm({ onSuccess }: { onSuccess?: () => void }) {
           />
           {errors.email && (
             <p className="text-sm text-destructive">{errors.email.message}</p>
+          )}
+        </div>
+        <div className="space-y-1">
+          <Label>Status</Label>
+          <Select onValueChange={(v) => setValue("graduated", v as "true" | "false")}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">Alumni (graduated)</SelectItem>
+              <SelectItem value="false">Student (current)</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.graduated && (
+            <p className="text-sm text-destructive">Required</p>
           )}
         </div>
         <Button type="submit" disabled={loading}>

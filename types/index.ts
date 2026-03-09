@@ -59,6 +59,7 @@ export interface Invitation {
   email: string;
   firstName: string;
   lastName: string;
+  graduated: boolean;
   sentAt: string;
   usedAt?: string;
   sentBy: string;

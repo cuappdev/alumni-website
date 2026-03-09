@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Invitation } from "@/types";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -15,7 +14,7 @@ export function InvitationList({ refreshKey }: { refreshKey?: number }) {
     setLoading(true);
     fetch("/api/invitations")
       .then((r) => (r.ok ? r.json() : []))
-      .then(setInvitations)
+      .then((data: Invitation[]) => setInvitations(data.filter((i) => !i.usedAt)))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [refreshKey]);
@@ -58,20 +57,14 @@ export function InvitationList({ refreshKey }: { refreshKey?: number }) {
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                {inv.usedAt ? (
-                  <Badge variant="secondary">Accepted</Badge>
-                ) : (
-                  <>
-                    <Badge variant="outline">Pending</Badge>
-                    <button
-                      className="text-sm underline text-muted-foreground hover:text-foreground disabled:opacity-50"
-                      disabled={revoking === inv.code}
-                      onClick={() => rescind(inv.code, `${inv.firstName} ${inv.lastName}`)}
-                    >
-                      {revoking === inv.code ? "Cancelling…" : "Cancel"}
-                    </button>
-                  </>
-                )}
+                <Badge variant="outline">Pending</Badge>
+                <button
+                  className="text-sm underline text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  disabled={revoking === inv.code}
+                  onClick={() => rescind(inv.code, `${inv.firstName} ${inv.lastName}`)}
+                >
+                  {revoking === inv.code ? "Cancelling…" : "Cancel"}
+                </button>
               </div>
             </div>
           ))}

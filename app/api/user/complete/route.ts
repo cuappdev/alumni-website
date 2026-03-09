@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     const isAdmin = email === SUPER_ADMIN_EMAIL;
 
     let invCode: string | null = null;
+    let invGraduated: boolean | undefined;
     if (!isAdmin) {
       const invSnap = await adminDb
         .collection("invitations")
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
         );
       }
       invCode = invSnap.docs[0].id;
+      invGraduated = invSnap.docs[0].data().graduated as boolean;
     }
 
     const profileData: Record<string, unknown> = {
@@ -50,7 +52,8 @@ export async function POST(request: NextRequest) {
     if (phoneNumber) profileData.phoneNumber = normalizePhone(phoneNumber) ?? phoneNumber;
     if (profilePictureUrl) profileData.profilePictureUrl = profilePictureUrl;
     if (cityId) profileData.cityId = cityId;
-    if (graduated !== undefined) profileData.graduated = graduated;
+    const resolvedGraduated = invGraduated !== undefined ? invGraduated : graduated;
+    if (resolvedGraduated !== undefined) profileData.graduated = resolvedGraduated;
     if (linkedinUrl) profileData.linkedinUrl = linkedinUrl;
     if (instagramUrl) profileData.instagramUrl = instagramUrl;
     if (isAdmin) profileData.role = "admin";

@@ -84,10 +84,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { email, firstName, lastName } = await request.json();
-    if (!email || !firstName || !lastName) {
+    const { email, firstName, lastName, graduated } = await request.json();
+    if (!email || !firstName || !lastName || graduated === undefined) {
       return NextResponse.json(
-        { error: "Email, firstName, and lastName are required" },
+        { error: "Email, firstName, lastName, and graduated are required" },
         { status: 400 },
       );
     }
@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
       email,
       firstName,
       lastName,
+      graduated: Boolean(graduated),
       sentAt: Timestamp.now(),
       sentBy: tokens.decodedToken.uid,
     });

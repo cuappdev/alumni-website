@@ -12,12 +12,14 @@ const isDev = process.env.NODE_ENV === "development";
 async function sendPostNotifications(
   subscribers: { email: string }[],
   title: string,
-  description: string
+  description: string,
+  authorName: string
 ) {
   const feedLink = `${APP_URL}/feed`;
 
   if (isDev) {
     console.log(`\n📬 [DEV] Post notification (not sent)`);
+    console.log(`   Author: ${authorName}`);
     console.log(`   Title:  ${title}`);
     console.log(`   To:     ${subscribers.map((u) => u.email).join(", ")}`);
     console.log(`   Link:   ${feedLink}\n`);
@@ -27,10 +29,11 @@ async function sendPostNotifications(
   const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.batch.send(
     subscribers.map((u) => ({
-      from: "AppDev Alumni <noreply@alumni.cornellappdev.com>",
+      from: `${authorName} (via AppDev Alumni) <noreply@alumni.cornellappdev.com>`,
       to: u.email,
       subject: `New post: ${title}`,
       html: `
+        <p><strong>${authorName}</strong> posted:</p>
         <h2>${title}</h2>
         <p>${description}</p>
         <p><a href="${feedLink}">View in feed</a></p>
@@ -67,12 +70,15 @@ export async function POST(request: NextRequest) {
     });
 
     const usersSnap = await adminDb.collection("users").get();
-    const subscribers = usersSnap.docs
-      .map((d) => d.data())
-      .filter((u) => u.emailNotifications === true && u.email);
+    const allUsers = usersSnap.docs.map((d) => d.data());
+
+    const author = allUsers.find((u) => u.uid === tokens.decodedToken.uid);
+    const authorName = author ? `${author.firstName} ${author.lastName}` : "Someone";
+
+    const subscribers = allUsers.filter((u) => u.emailNotifications === true && u.email);
 
     if (subscribers.length > 0) {
-      await sendPostNotifications(subscribers as { email: string }[], title, description);
+      await sendPostNotifications(subscribers as { email: string }[], title, description, authorName);
     }
 
     return NextResponse.json({ ok: true });
