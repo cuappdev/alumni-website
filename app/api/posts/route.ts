@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const usersSnap = await adminDb.collection("users").get();
     const subscribers = usersSnap.docs
       .map((d) => d.data())
-      .filter((u) => u.emailNotifications !== false && u.email);
+      .filter((u) => u.emailNotifications === true && u.email);
 
     if (subscribers.length > 0) {
       await sendPostNotifications(subscribers as { email: string }[], title, description);

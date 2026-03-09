@@ -25,3 +25,12 @@ export async function getInvitationByEmail(email: string): Promise<Invitation | 
 export async function markInvitationUsed(code: string): Promise<void> {
   await adminDb.collection("invitations").doc(code).update({ usedAt: FieldValue.serverTimestamp() });
 }
+
+export async function listInvitations(): Promise<Invitation[]> {
+  const snap = await adminDb.collection("invitations").orderBy("sentAt", "desc").get();
+  return snap.docs.map((d) => serializeInvitation(d.data()));
+}
+
+export async function deleteInvitation(code: string): Promise<void> {
+  await adminDb.collection("invitations").doc(code).delete();
+}

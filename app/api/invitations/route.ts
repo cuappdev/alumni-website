@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { Timestamp } from "firebase-admin/firestore";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/lib/firebase/auth-edge";
+import { listInvitations } from "@/lib/firestore/invitations";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const isDev = process.env.NODE_ENV === "development";
@@ -39,6 +40,24 @@ async function sendInviteEmail(params: {
       },
     },
   });
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const tokens = await getTokens(request.cookies, authConfig);
+    if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const inviterDoc = await adminDb.collection("users").doc(tokens.decodedToken.uid).get();
+    if (inviterDoc.data()?.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const invitations = await listInvitations();
+    return NextResponse.json(invitations);
+  } catch (error) {
+    console.error("List invitations error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {

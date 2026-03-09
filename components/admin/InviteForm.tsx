@@ -17,7 +17,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export function InviteForm() {
+export function InviteForm({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
 
   const {
@@ -41,6 +41,7 @@ export function InviteForm() {
       }
       toast.success(`Invitation sent to ${data.email}`);
       reset();
+      onSuccess?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to send invitation.");
     } finally {
