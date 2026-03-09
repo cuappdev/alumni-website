@@ -14,8 +14,10 @@ const APPDEV_BUCKET = "alumni-website";
 async function uploadToAppDev(buffer: Buffer, filename: string): Promise<string> {
   const form = new FormData();
   form.append("bucket", APPDEV_BUCKET);
-  form.append("image", new File([new Uint8Array(buffer)], filename, { type: "image/webp" }));
-  console.log("[avatar/appdev] uploading to", UPLOAD_URL, { bucket: APPDEV_BUCKET, filename, bytes: buffer.byteLength });
+  // Use .jpg extension — older Python mimetypes doesn't recognize .webp
+  const uploadFilename = filename.replace(/\.\w+$/, ".jpg");
+  form.append("image", new File([new Uint8Array(buffer)], uploadFilename, { type: "image/jpeg" }));
+  console.log("[avatar/appdev] uploading to", UPLOAD_URL, { bucket: APPDEV_BUCKET, filename: uploadFilename, bytes: buffer.byteLength });
   const res = await fetch(UPLOAD_URL, { method: "POST", body: form });
   console.log("[avatar/appdev] response status", res.status);
   if (!res.ok) {
@@ -23,7 +25,8 @@ async function uploadToAppDev(buffer: Buffer, filename: string): Promise<string>
     console.error("[avatar/appdev] upload failed", { status: res.status, body });
     throw new Error(`AppDev upload failed: ${res.status} ${body}`);
   }
-  const url = (await res.text()).trim();
+  const json = await res.json();
+  const url = json.data as string;
   console.log("[avatar/appdev] uploaded url", url);
   return url;
 }
@@ -37,13 +40,13 @@ async function removeFromAppDev(imageUrl: string): Promise<void> {
 }
 
 async function uploadToEmulator(buffer: Buffer, uid: string): Promise<string> {
-  const filePath = `profile-pictures/${uid}.webp`;
+  const filePath = `profile-pictures/${uid}.jpg`;
   const bucket = adminStorage.bucket(BUCKET);
   const fileRef = bucket.file(filePath);
   const token = crypto.randomUUID();
   await fileRef.save(buffer, {
     metadata: {
-      contentType: "image/webp",
+      contentType: "image/jpeg",
       metadata: { firebaseStorageDownloadTokens: token },
     },
   });
@@ -52,7 +55,7 @@ async function uploadToEmulator(buffer: Buffer, uid: string): Promise<string> {
 
 async function removeFromEmulator(uid: string): Promise<void> {
   try {
-    const filePath = `profile-pictures/${uid}.webp`;
+    const filePath = `profile-pictures/${uid}.jpg`;
     await adminStorage.bucket(BUCKET).file(filePath).delete();
   } catch {
     // file may not exist yet
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const processed = await sharp(Buffer.from(arrayBuffer))
       .resize(SIZE, SIZE, { fit: "cover" })
-      .webp({ quality: 85 })
+      .jpeg({ quality: 85 })
       .toBuffer();
 
     console.log("[avatar] processed buffer size", processed.byteLength);
@@ -94,7 +97,7 @@ export async function POST(request: NextRequest) {
     const url =
       process.env.NODE_ENV === "development"
         ? await uploadToEmulator(processed, uid)
-        : await uploadToAppDev(processed, `${uid}.webp`);
+        : await uploadToAppDev(processed, `${uid}.jpg`);
 
     await updateUserProfile(uid, { profilePictureUrl: url });
 
