@@ -23,7 +23,7 @@ interface ProfileFormFieldsProps {
   selectedCityId: string | undefined;
   onCityIdChange: (id: string | undefined) => void;
   profilePictureUrl: string | undefined;
-  onProfilePictureUploaded: (url: string) => void;
+  onProfilePictureFileSelected: (blob: Blob, previewUrl: string) => void;
 }
 
 export function ProfileFormFields({
@@ -38,13 +38,13 @@ export function ProfileFormFields({
   selectedCityId,
   onCityIdChange,
   profilePictureUrl: _profilePictureUrl,
-  onProfilePictureUploaded,
+  onProfilePictureFileSelected,
 }: ProfileFormFieldsProps) {
   return (
     <>
       <ImageUpload
         currentUrl={imageUploadCurrentUrl}
-        onUploaded={onProfilePictureUploaded}
+        onFileSelected={onProfilePictureFileSelected}
         name={imageUploadName}
         label="Profile picture"
       />

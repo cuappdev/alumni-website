@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 
 interface ImageUploadProps {
   currentUrl?: string;
-  onUploaded: (url: string) => void;
+  onFileSelected: (blob: Blob, previewUrl: string) => void;
   label?: string;
   name?: string;
 }
@@ -57,11 +57,10 @@ function getCroppedBlob(image: HTMLImageElement, crop: Crop): Promise<Blob> {
   });
 }
 
-export function ImageUpload({ currentUrl, onUploaded, label = "Photo", name }: ImageUploadProps) {
+export function ImageUpload({ currentUrl, onFileSelected, label = "Photo", name }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | undefined>(currentUrl || undefined);
   const [imgSrc, setImgSrc] = useState("");
   const [crop, setCrop] = useState<Crop>();
-  const [uploading, setUploading] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -71,7 +70,6 @@ export function ImageUpload({ currentUrl, onUploaded, label = "Photo", name }: I
     const reader = new FileReader();
     reader.onload = () => setImgSrc(reader.result as string);
     reader.readAsDataURL(file);
-    // reset so the same file can be re-selected
     e.target.value = "";
   };
 
@@ -82,22 +80,11 @@ export function ImageUpload({ currentUrl, onUploaded, label = "Photo", name }: I
 
   const handleApply = async () => {
     if (!imgRef.current || !crop) return;
-    setUploading(true);
-    try {
-      const blob = await getCroppedBlob(imgRef.current, crop);
-      const form = new FormData();
-      form.append("file", blob, "avatar.jpg");
-      const res = await fetch("/api/user/avatar", { method: "POST", body: form });
-      if (!res.ok) throw new Error("Upload failed");
-      const { url } = await res.json();
-      setPreview(url);
-      onUploaded(url);
-      setImgSrc("");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setUploading(false);
-    }
+    const blob = await getCroppedBlob(imgRef.current, crop);
+    const previewUrl = URL.createObjectURL(blob);
+    setPreview(previewUrl);
+    onFileSelected(blob, previewUrl);
+    setImgSrc("");
   };
 
   return (
@@ -137,15 +124,15 @@ export function ImageUpload({ currentUrl, onUploaded, label = "Photo", name }: I
               keepSelection
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img ref={imgRef} src={imgSrc} onLoad={onImageLoad} alt="Crop preview" />
+              <img ref={imgRef} src={imgSrc || undefined} onLoad={onImageLoad} alt="Crop preview" />
             </ReactCrop>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImgSrc("")} disabled={uploading}>
+            <Button variant="outline" onClick={() => setImgSrc("")}>
               Cancel
             </Button>
-            <Button onClick={handleApply} disabled={!crop || uploading}>
-              {uploading ? "Uploading…" : "Apply"}
+            <Button onClick={handleApply} disabled={!crop}>
+              Apply
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/lib/auth/context";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,6 +42,7 @@ interface ProfileEditFormProps {
 
 export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
   const [open, setOpen] = useState(false);
+  const { refreshProfile } = useAuth();
   const formState = useProfileFormState(profile);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -58,6 +60,15 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
 
   const onSubmit = async (data: FormData) => {
     try {
+      let profilePictureUrl = formState.profilePictureUrl;
+      if (formState.pendingPictureFile) {
+        const form = new FormData();
+        form.append("file", formState.pendingPictureFile, "avatar.jpg");
+        const res = await fetch("/api/user/avatar", { method: "POST", body: form });
+        if (!res.ok) throw new Error("Avatar upload failed");
+        profilePictureUrl = (await res.json()).url;
+      }
+
       const updates = {
         ...data,
         bio: data.bio || undefined,
@@ -67,7 +78,7 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
         cityId: formState.selectedCityId,
         linkedinUrl: data.linkedinUrl || undefined,
         instagramUrl: data.instagramUrl || undefined,
-        profilePictureUrl: formState.profilePictureUrl,
+        profilePictureUrl,
       };
       const res = await fetch("/api/user", {
         method: "PATCH",
@@ -76,6 +87,7 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
       });
       if (!res.ok) throw new Error("Failed");
       onUpdated(updates);
+      await refreshProfile();
       toast.success("Profile updated!");
       setOpen(false);
     } catch {
@@ -107,7 +119,7 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
             selectedCityId={formState.selectedCityId}
             onCityIdChange={formState.setSelectedCityId}
             profilePictureUrl={formState.profilePictureUrl}
-            onProfilePictureUploaded={formState.setProfilePictureUrl}
+            onProfilePictureFileSelected={formState.onPictureSelected}
           />
           <div className="flex items-center gap-2">
             <input

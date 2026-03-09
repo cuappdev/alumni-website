@@ -8,10 +8,19 @@ export function useProfileFormState(initial?: Partial<UserProfile>) {
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>(initial?.companyIds ?? []);
   const [selectedCityId, setSelectedCityId] = useState<string | undefined>(initial?.cityId);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(initial?.profilePictureUrl);
+  const [pendingPictureFile, setPendingPictureFile] = useState<Blob | null>(null);
+
+  const onPictureSelected = (blob: Blob, previewUrl: string) => {
+    setPendingPictureFile(blob);
+    setProfilePictureUrl(previewUrl);
+  };
+
   return {
     selectedRoles, setSelectedRoles,
     selectedCompanyIds, setSelectedCompanyIds,
     selectedCityId, setSelectedCityId,
-    profilePictureUrl, setProfilePictureUrl,
+    profilePictureUrl,
+    pendingPictureFile,
+    onPictureSelected,
   };
 }

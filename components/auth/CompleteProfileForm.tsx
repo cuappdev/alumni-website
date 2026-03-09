@@ -51,6 +51,15 @@ export function CompleteProfileForm() {
   const onSubmit = async (data: FormData) => {
     if (!user) return;
     try {
+      let profilePictureUrl = formState.profilePictureUrl ?? user.photoURL ?? undefined;
+      if (formState.pendingPictureFile) {
+        const form = new FormData();
+        form.append("file", formState.pendingPictureFile, "avatar.jpg");
+        const avatarRes = await fetch("/api/user/avatar", { method: "POST", body: form });
+        if (!avatarRes.ok) throw new Error("Avatar upload failed");
+        profilePictureUrl = (await avatarRes.json()).url;
+      }
+
       const res = await fetch("/api/user/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -63,7 +72,7 @@ export function CompleteProfileForm() {
           cityId: formState.selectedCityId,
           linkedinUrl: data.linkedinUrl || undefined,
           instagramUrl: data.instagramUrl || undefined,
-          profilePictureUrl: formState.profilePictureUrl ?? user.photoURL ?? undefined,
+          profilePictureUrl,
         }),
       });
 
@@ -120,7 +129,7 @@ export function CompleteProfileForm() {
             selectedCityId={formState.selectedCityId}
             onCityIdChange={formState.setSelectedCityId}
             profilePictureUrl={formState.profilePictureUrl}
-            onProfilePictureUploaded={formState.setProfilePictureUrl}
+            onProfilePictureFileSelected={formState.onPictureSelected}
           />
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "Saving…" : "Complete sign-up"}
