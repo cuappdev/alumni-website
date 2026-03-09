@@ -29,6 +29,7 @@ export async function getPosts(): Promise<Post[]> {
         firstName: u.firstName,
         lastName: u.lastName,
         classYear: u.classYear,
+        graduated: u.graduated,
         profilePictureUrl: u.profilePictureUrl,
       });
     }

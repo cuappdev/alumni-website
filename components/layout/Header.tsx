@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useAuth } from "@/lib/auth/context";
@@ -17,9 +17,10 @@ import { MobileSidebar } from "./MobileSidebar";
 import { toast } from "sonner";
 
 const navLinks = [
-  { href: "/feed", label: "Feed" },
+  { href: "/feed", label: "Posts" },
   { href: "/directory", label: "Directory" },
-  { href: "/organizations", label: "Organizations" },
+  { href: "/companies", label: "Companies" },
+  { href: "/cities", label: "Cities" },
 ];
 
 const adminLink = { href: "/admin", label: "Admin" };
@@ -27,6 +28,7 @@ const adminLink = { href: "/admin", label: "Admin" };
 export function Header() {
   const { user, profile, isAdmin } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -54,7 +56,7 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-md px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                className={`rounded-md px-3 py-1.5 text-sm hover:bg-muted ${pathname.startsWith(link.href) ? "font-medium" : "font-normal"}`}
               >
                 {link.label}
               </Link>
@@ -62,7 +64,7 @@ export function Header() {
             {isAdmin && (
               <Link
                 href={adminLink.href}
-                className="rounded-md px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                className={`rounded-md px-3 py-1.5 text-sm hover:bg-muted ${pathname.startsWith(adminLink.href) ? "font-medium" : "font-normal"}`}
               >
                 {adminLink.label}
               </Link>

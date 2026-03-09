@@ -1,23 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UserProfile, Organization } from "@/types";
+import { UserProfile, Company } from "@/types";
 import { DirectoryFilters } from "@/components/directory/DirectoryFilters";
 import { AlumniCard } from "@/components/directory/AlumniCard";
 
 export default function DirectoryPage() {
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [nameFilter, setNameFilter] = useState("");
   const [classYearFilter, setClassYearFilter] = useState("");
 
   useEffect(() => {
     Promise.all([
       fetch("/api/users").then((r) => r.json()),
-      fetch("/api/organizations").then((r) => r.json()),
-    ]).then(([users, orgs]) => {
+      fetch("/api/companies").then((r) => r.json()),
+    ]).then(([users, comps]) => {
       setAllUsers(users);
-      setOrganizations(orgs);
+      setCompanies(comps);
     });
   }, []);
 
@@ -40,7 +40,7 @@ export default function DirectoryPage() {
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((u) => (
-          <AlumniCard key={u.uid} profile={u} organizations={organizations} />
+          <AlumniCard key={u.uid} profile={u} companies={companies} />
         ))}
       </div>
       {filtered.length === 0 && (

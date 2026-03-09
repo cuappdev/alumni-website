@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { UserProfile, Organization } from "@/types";
+import { UserProfile, Company } from "@/types";
 
 export default function ProfilePage({
   params,
@@ -12,15 +12,15 @@ export default function ProfilePage({
 }) {
   const { uid } = use(params);
   const [profile, setProfile] = useState<UserProfile | null | "loading">("loading");
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
 
   useEffect(() => {
     Promise.all([
       fetch(`/api/users/${uid}`).then((r) => (r.ok ? r.json() : null)),
-      fetch("/api/organizations").then((r) => r.json()),
-    ]).then(([p, o]) => {
+      fetch("/api/companies").then((r) => r.json()),
+    ]).then(([p, c]) => {
       setProfile(p);
-      setOrganizations(o);
+      setCompanies(c);
     });
   }, [uid]);
 
@@ -36,7 +36,7 @@ export default function ProfilePage({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <ProfileHeader initialProfile={profile} organizations={organizations} />
+      <ProfileHeader initialProfile={profile} initialCompanies={companies} />
     </div>
   );
 }

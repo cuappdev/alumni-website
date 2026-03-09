@@ -7,8 +7,8 @@ export async function uploadProfilePicture(uid: string, file: File): Promise<str
   return getDownloadURL(storageRef);
 }
 
-export async function uploadOrganizationLogo(orgId: string, file: File): Promise<string> {
-  const storageRef = ref(storage, `organization-logos/${orgId}`);
+export async function uploadCompanyLogo(companyId: string, file: File): Promise<string> {
+  const storageRef = ref(storage, `company-logos/${companyId}`);
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
 }

@@ -8,23 +8,34 @@ import { authConfig } from "@/lib/firebase/auth-edge";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const isDev = process.env.NODE_ENV === "development";
 
-async function sendInviteEmail(to: string, signupLink: string) {
+async function sendInviteEmail(params: {
+  to: string;
+  firstName: string;
+  invitationLink: string;
+  inviterEmail: string;
+  inviterFirstName: string;
+  inviterLastName: string;
+}) {
   if (isDev) {
     console.log("\n📬 [DEV] Invitation email (not sent)");
-    console.log(`   To:      ${to}`);
-    console.log(`   Link:    ${signupLink}\n`);
+    console.log(`   To:        ${params.to}`);
+    console.log(`   Link:      ${params.invitationLink}`);
+    console.log(`   Inviter:   ${params.inviterFirstName} ${params.inviterLastName} <${params.inviterEmail}>\n`);
     return;
   }
   const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
     from: "AppDev Alumni <noreply@alumni.cornellappdev.com>",
-    to,
-    subject: "You're invited to join the AppDev Alumni",
-    html: `
-      <p>You've been invited to join our private alumni network.</p>
-      <p><a href="${signupLink}">Click here to create your account</a></p>
-      <p>This link is unique to you — please don't share it.</p>
-    `,
+    to: params.to,
+    subject: "You're invited to join the AppDev Alumni Network",
+    template: "invitation-email",
+    data: {
+      firstName: params.firstName,
+      invitationLink: params.invitationLink,
+      inviterEmail: params.inviterEmail,
+      inviterFirstName: params.inviterFirstName,
+      inviterLastName: params.inviterLastName,
+    },
   });
 }
 
@@ -33,8 +44,9 @@ export async function POST(request: NextRequest) {
     const tokens = await getTokens(request.cookies, authConfig);
     if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const userDoc = await adminDb.collection("users").doc(tokens.decodedToken.uid).get();
-    if (userDoc.data()?.role !== "admin") {
+    const inviterDoc = await adminDb.collection("users").doc(tokens.decodedToken.uid).get();
+    const inviterData = inviterDoc.data();
+    if (inviterData?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -44,9 +56,16 @@ export async function POST(request: NextRequest) {
     }
 
     const code = crypto.randomUUID();
-    const signupLink = `${APP_URL}/signup?code=${code}`;
+    const invitationLink = `${APP_URL}/signup?code=${code}`;
 
-    await sendInviteEmail(email, signupLink);
+    await sendInviteEmail({
+      to: email,
+      firstName,
+      invitationLink,
+      inviterEmail: inviterData?.email ?? tokens.decodedToken.email ?? "",
+      inviterFirstName: inviterData?.firstName ?? "",
+      inviterLastName: inviterData?.lastName ?? "",
+    });
 
     await adminDb.collection("invitations").doc(code).set({
       code,

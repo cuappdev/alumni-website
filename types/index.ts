@@ -10,8 +10,12 @@ export interface UserProfile {
   bio?: string;
   profilePictureUrl?: string;
   phoneNumber?: string;
-  organizationIds: string[];
+  companyIds: string[];
   appDevRoles: AppDevRole[];
+  cityId?: string;
+  graduated?: boolean;
+  linkedinUrl?: string;
+  instagramUrl?: string;
   role?: "admin" | "member";
   emailNotifications: boolean;
   profileComplete: boolean;
@@ -19,10 +23,15 @@ export interface UserProfile {
   updatedAt: string;
 }
 
-export interface Organization {
+export interface Company {
   id: string;
   name: string;
   logoUrl?: string;
+}
+
+export interface City {
+  id: string;
+  name: string;
 }
 
 export interface PostAuthor {
@@ -30,6 +39,7 @@ export interface PostAuthor {
   firstName: string;
   lastName: string;
   classYear: number;
+  graduated?: boolean;
   profilePictureUrl?: string;
 }
 

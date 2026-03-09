@@ -3,18 +3,18 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-interface OrganizationFiltersProps {
+interface CompanyFiltersProps {
   name: string;
   onNameChange: (v: string) => void;
 }
 
-export function OrganizationFilters({ name, onNameChange }: OrganizationFiltersProps) {
+export function CompanyFilters({ name, onNameChange }: CompanyFiltersProps) {
   return (
     <div className="space-y-1 max-w-sm">
-      <Label htmlFor="org-search">Search organizations</Label>
+      <Label htmlFor="company-search">Search companies</Label>
       <Input
-        id="org-search"
-        placeholder="Organization name…"
+        id="company-search"
+        placeholder="Company name…"
         value={name}
         onChange={(e) => onNameChange(e.target.value)}
       />

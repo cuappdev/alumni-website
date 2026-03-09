@@ -19,6 +19,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <>
       <Header />
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <footer className="mt-12 py-6 text-center text-xs text-muted-foreground space-y-1">
+        <p>&copy; {new Date().getFullYear()} Cornell AppDev Alumni</p>
+        <p>
+          Feedback?{" "}
+          <a href="mailto:admin@alumni.cornellappdev.com" className="hover:underline">
+            admin@alumni.cornellappdev.com
+          </a>
+          {" · "}
+          <a href="https://github.com/cuappdev/alumni-website" target="_blank" rel="noopener noreferrer" className="hover:underline">
+            GitHub
+          </a>
+        </p>
+      </footer>
     </>
   );
 }

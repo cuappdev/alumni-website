@@ -19,7 +19,7 @@ export function PostList() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mx-auto max-w-[600px]">
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}

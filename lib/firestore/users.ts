@@ -18,7 +18,7 @@ export async function createUserStub(
     ...data,
     uid,
     profileComplete: false,
-    organizationIds: [],
+    companyIds: [],
     appDevRoles: [],
     emailNotifications: true,
     createdAt: FieldValue.serverTimestamp(),
@@ -53,12 +53,19 @@ export async function updateUserProfile(
   uid: string,
   data: Partial<Omit<UserProfile, "uid" | "createdAt">>
 ): Promise<void> {
-  await adminDb.collection("users").doc(uid).update({ ...data, updatedAt: FieldValue.serverTimestamp() });
+  const OPTIONAL_STRINGS = ["profilePictureUrl", "bio", "phoneNumber", "linkedinUrl", "instagramUrl"] as const;
+  const sanitized = { ...data };
+  for (const key of OPTIONAL_STRINGS) {
+    if (key in sanitized && !sanitized[key]) delete sanitized[key];
+  }
+  await adminDb.collection("users").doc(uid).update({ ...sanitized, updatedAt: FieldValue.serverTimestamp() });
 }
 
 export async function searchUsers(
   nameFilter?: string,
-  classYearFilter?: number
+  classYearFilter?: number,
+  companyId?: string,
+  cityId?: string,
 ): Promise<UserProfile[]> {
   const snap = await adminDb.collection("users").where("profileComplete", "==", true).get();
   let users = snap.docs.map((d) => serializeUser(d.data()));
@@ -71,6 +78,12 @@ export async function searchUsers(
   }
   if (classYearFilter) {
     users = users.filter((u) => u.classYear === classYearFilter);
+  }
+  if (companyId) {
+    users = users.filter((u) => u.companyIds.includes(companyId));
+  }
+  if (cityId) {
+    users = users.filter((u) => u.cityId === cityId);
   }
   return users;
 }

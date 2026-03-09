@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/lib/firebase/auth-edge";
 import { SUPER_ADMIN_EMAIL } from "@/lib/constants";
+import { normalizePhone } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     const { uid, email } = tokens.decodedToken;
 
     const body = await request.json();
-    const { firstName, lastName, classYear, bio, phoneNumber, organizationIds, appDevRoles, profilePictureUrl } =
+    const { firstName, lastName, classYear, bio, phoneNumber, companyIds, appDevRoles, profilePictureUrl, cityId, graduated, linkedinUrl, instagramUrl } =
       body;
 
     const isAdmin = email === SUPER_ADMIN_EMAIL;
@@ -39,15 +40,19 @@ export async function POST(request: NextRequest) {
       firstName,
       lastName,
       classYear,
-      organizationIds: organizationIds ?? [],
+      companyIds: companyIds ?? [],
       appDevRoles: appDevRoles ?? [],
       emailNotifications: true,
       profileComplete: true,
       updatedAt: FieldValue.serverTimestamp(),
     };
     if (bio) profileData.bio = bio;
-    if (phoneNumber) profileData.phoneNumber = phoneNumber;
+    if (phoneNumber) profileData.phoneNumber = normalizePhone(phoneNumber) ?? phoneNumber;
     if (profilePictureUrl) profileData.profilePictureUrl = profilePictureUrl;
+    if (cityId) profileData.cityId = cityId;
+    if (graduated !== undefined) profileData.graduated = graduated;
+    if (linkedinUrl) profileData.linkedinUrl = linkedinUrl;
+    if (instagramUrl) profileData.instagramUrl = instagramUrl;
     if (isAdmin) profileData.role = "admin";
 
     await adminDb.collection("users").doc(uid).set(profileData, { merge: true });

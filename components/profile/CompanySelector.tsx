@@ -2,17 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { Organization } from "@/types";
+import { Company } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
-interface OrganizationSelectorProps {
+interface CompanySelectorProps {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
 }
 
-export function OrganizationSelector({ selectedIds, onChange }: OrganizationSelectorProps) {
-  const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
+export function CompanySelector({ selectedIds, onChange }: CompanySelectorProps) {
+  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -20,9 +20,9 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/organizations")
+    fetch("/api/companies")
       .then((r) => r.json())
-      .then(setAllOrganizations)
+      .then(setAllCompanies)
       .catch(console.error);
   }, []);
 
@@ -36,16 +36,16 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const selected = allOrganizations.filter((o) => selectedIds.includes(o.id));
-  const filtered = allOrganizations.filter(
-    (o) =>
-      !selectedIds.includes(o.id) && o.name.toLowerCase().includes(search.toLowerCase())
+  const selected = allCompanies.filter((c) => selectedIds.includes(c.id));
+  const filtered = allCompanies.filter(
+    (c) =>
+      !selectedIds.includes(c.id) && c.name.toLowerCase().includes(search.toLowerCase())
   );
-  const exactMatch = allOrganizations.some(
-    (o) => o.name.toLowerCase() === search.trim().toLowerCase()
+  const exactMatch = allCompanies.some(
+    (c) => c.name.toLowerCase() === search.trim().toLowerCase()
   );
   const showDropdown = open && (filtered.length > 0 || (search.trim() && !exactMatch));
-  // Total items in dropdown: filtered orgs + optional "Create" row
+  // Total items in dropdown: filtered companies + optional "Create" row
   const dropdownCount = filtered.length + (search.trim() && !exactMatch ? 1 : 0);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -68,8 +68,8 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
     }
   };
 
-  const handleSelect = (org: Organization) => {
-    onChange([...selectedIds, org.id]);
+  const handleSelect = (company: Company) => {
+    onChange([...selectedIds, company.id]);
     setSearch("");
     setOpen(false);
     setHighlightedIndex(0);
@@ -84,14 +84,14 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
     if (!name || creating) return;
     setCreating(true);
     try {
-      const res = await fetch("/api/organizations", {
+      const res = await fetch("/api/companies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
       const { id } = await res.json();
-      const newOrg: Organization = { id, name };
-      setAllOrganizations((prev) => [...prev, newOrg]);
+      const newCompany: Company = { id, name };
+      setAllCompanies((prev) => [...prev, newCompany]);
       onChange([...selectedIds, id]);
       setSearch("");
       setOpen(false);
@@ -104,12 +104,12 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
     <div ref={containerRef} className="space-y-2">
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {selected.map((o) => (
-            <Badge key={o.id} variant="secondary" className="gap-1 pr-1">
-              {o.name}
+          {selected.map((c) => (
+            <Badge key={c.id} variant="secondary" className="gap-1 pr-1">
+              {c.name}
               <button
                 type="button"
-                onClick={() => handleRemove(o.id)}
+                onClick={() => handleRemove(c.id)}
                 className="ml-1 hover:text-destructive"
               >
                 <X className="h-3 w-3" />
@@ -120,7 +120,7 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
       )}
       <div className="relative">
         <Input
-          placeholder="Search organizations…"
+          placeholder="Search companies…"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setHighlightedIndex(0); setOpen(true); }}
           onFocus={() => setOpen(true)}
@@ -128,18 +128,18 @@ export function OrganizationSelector({ selectedIds, onChange }: OrganizationSele
         />
         {showDropdown && (
           <div className="absolute z-10 top-full mt-1 w-full bg-background border rounded-md shadow-md max-h-48 overflow-y-auto">
-            {filtered.map((o, i) => (
+            {filtered.map((c, i) => (
               <button
-                key={o.id}
+                key={c.id}
                 type="button"
                 className={`w-full text-left px-3 py-2 text-sm hover:bg-muted ${i === highlightedIndex ? "bg-muted" : ""}`}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleSelect(o);
+                  handleSelect(c);
                 }}
                 onMouseEnter={() => setHighlightedIndex(i)}
               >
-                {o.name}
+                {c.name}
               </button>
             ))}
             {search.trim() && !exactMatch && (

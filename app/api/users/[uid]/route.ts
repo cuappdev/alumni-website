@@ -33,16 +33,24 @@ export async function PATCH(
   }
 
   const { uid } = await params;
-  const { role } = await request.json();
+  const body = await request.json();
+  const updates: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
 
-  if (role !== "admin" && role !== "member") {
-    return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+  if ("role" in body) {
+    if (body.role !== "admin" && body.role !== "member") {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    }
+    updates.role = body.role;
   }
 
-  await adminDb
-    .collection("users")
-    .doc(uid)
-    .update({ role, updatedAt: FieldValue.serverTimestamp() });
+  if ("graduated" in body) {
+    if (typeof body.graduated !== "boolean") {
+      return NextResponse.json({ error: "graduated must be a boolean" }, { status: 400 });
+    }
+    updates.graduated = body.graduated;
+  }
+
+  await adminDb.collection("users").doc(uid).update(updates);
 
   return NextResponse.json({ ok: true });
 }

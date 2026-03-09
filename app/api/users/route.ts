@@ -10,7 +10,9 @@ export async function GET(request: NextRequest) {
   const name = request.nextUrl.searchParams.get("name") ?? undefined;
   const classYearStr = request.nextUrl.searchParams.get("classYear");
   const classYear = classYearStr ? parseInt(classYearStr) : undefined;
+  const companyId = request.nextUrl.searchParams.get("companyId") ?? undefined;
+  const cityId = request.nextUrl.searchParams.get("cityId") ?? undefined;
 
-  const users = await searchUsers(name, classYear);
+  const users = await searchUsers(name, classYear, companyId, cityId);
   return NextResponse.json(users);
 }

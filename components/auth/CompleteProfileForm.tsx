@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,15 +8,12 @@ import { z } from "zod";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useAuth } from "@/lib/auth/context";
-import { OrganizationSelector } from "@/components/profile/OrganizationSelector";
-import { ImageUpload } from "@/components/profile/ImageUpload";
-import { AppDevRole } from "@/types";
+import { ProfileFormFields } from "@/components/profile/ProfileFormFields";
+import { useProfileFormState } from "@/components/profile/useProfileFormState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AppDevRoleSelector } from "@/components/profile/AppDevRoleSelector";
 import { toast } from "sonner";
 
 const schema = z.object({
@@ -28,24 +25,17 @@ const schema = z.object({
     .string()
     .refine((v) => !v || /^\+?[\d\s\-()+]{7,20}$/.test(v), "Invalid phone number")
     .optional(),
+  linkedinUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  instagramUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
 type FormData = z.infer<typeof schema>;
 
 export function CompleteProfileForm() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
-  const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(undefined);
-  const [selectedRoles, setSelectedRoles] = useState<AppDevRole[]>([]);
-  const [selectedOrganizationIds, setSelectedOrganizationIds] = useState<string[]>([]);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<FormData>({
+  const formState = useProfileFormState();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
@@ -60,20 +50,20 @@ export function CompleteProfileForm() {
 
   const onSubmit = async (data: FormData) => {
     if (!user) return;
-    setSubmitting(true);
     try {
       const res = await fetch("/api/user/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          classYear: data.classYear,
+          ...data,
           bio: data.bio || undefined,
           phoneNumber: data.phoneNumber || undefined,
-          organizationIds: selectedOrganizationIds,
-          appDevRoles: selectedRoles,
-          profilePictureUrl: profilePictureUrl ?? user.photoURL ?? undefined,
+          companyIds: formState.selectedCompanyIds,
+          appDevRoles: formState.selectedRoles,
+          cityId: formState.selectedCityId,
+          linkedinUrl: data.linkedinUrl || undefined,
+          instagramUrl: data.instagramUrl || undefined,
+          profilePictureUrl: formState.profilePictureUrl ?? user.photoURL ?? undefined,
         }),
       });
 
@@ -88,12 +78,11 @@ export function CompleteProfileForm() {
         throw new Error(error);
       }
 
+      await refreshProfile();
       router.push("/feed");
     } catch (err) {
       console.error(err);
       toast.error("Failed to save profile. Please try again.");
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -115,69 +104,26 @@ export function CompleteProfileForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" {...register("firstName")} />
-              {errors.firstName && (
-                <p className="text-sm text-destructive">{errors.firstName.message}</p>
-              )}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" {...register("lastName")} />
-              {errors.lastName && (
-                <p className="text-sm text-destructive">{errors.lastName.message}</p>
-              )}
-            </div>
-          </div>
           <div className="space-y-1">
             <Label>Email</Label>
             <Input value={user.email ?? ""} readOnly className="bg-muted" />
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="classYear">Class year</Label>
-            <Input id="classYear" type="number" {...register("classYear")} />
-            {errors.classYear && (
-              <p className="text-sm text-destructive">{errors.classYear.message}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <Label>AppDev roles</Label>
-            <AppDevRoleSelector selected={selectedRoles} onChange={setSelectedRoles} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="bio">Bio (optional)</Label>
-            <Textarea
-              id="bio"
-              rows={3}
-              placeholder="Tell the community about yourself. What did you do on AppDev? Where are you now? You can always edit this later."
-              {...register("bio")}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Organizations</Label>
-            <p className="text-xs text-muted-foreground">Where have you worked?</p>
-            <OrganizationSelector
-              selectedIds={selectedOrganizationIds}
-              onChange={setSelectedOrganizationIds}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="phone">Phone (optional)</Label>
-            <Input id="phone" type="tel" {...register("phoneNumber")} />
-            {errors.phoneNumber && (
-              <p className="text-sm text-destructive">{errors.phoneNumber.message}</p>
-            )}
-          </div>
-          <ImageUpload
-            currentUrl={user.photoURL ?? undefined}
-            onUploaded={setProfilePictureUrl}
-            name={user.displayName ?? undefined}
-            label="Profile picture (optional)"
+          <ProfileFormFields
+            register={register}
+            errors={errors}
+            imageUploadName={user.displayName ?? ""}
+            imageUploadCurrentUrl={user.photoURL ?? undefined}
+            selectedRoles={formState.selectedRoles}
+            onRolesChange={formState.setSelectedRoles}
+            selectedCompanyIds={formState.selectedCompanyIds}
+            onCompanyIdsChange={formState.setSelectedCompanyIds}
+            selectedCityId={formState.selectedCityId}
+            onCityIdChange={formState.setSelectedCityId}
+            profilePictureUrl={formState.profilePictureUrl}
+            onProfilePictureUploaded={formState.setProfilePictureUrl}
           />
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "Saving…" : "Complete sign-up"}
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Saving…" : "Complete sign-up"}
           </Button>
         </form>
       </CardContent>

@@ -10,6 +10,7 @@ interface AuthContextValue {
   profile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -17,12 +18,18 @@ const AuthContext = createContext<AuthContextValue>({
   profile: null,
   loading: true,
   isAdmin: false,
+  refreshProfile: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshProfile = async () => {
+    const res = await fetch("/api/user");
+    setProfile(res.ok ? await res.json() : null);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -42,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = profile?.role === "admin";
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdmin, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

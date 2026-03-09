@@ -2,7 +2,7 @@ import { authMiddleware } from "next-firebase-auth-edge";
 import { NextRequest, NextResponse } from "next/server";
 import { authConfig } from "@/lib/firebase/auth-edge";
 
-const PROTECTED_PATHS = ["/feed", "/directory", "/organizations", "/profile", "/admin"];
+const PROTECTED_PATHS = ["/feed", "/directory", "/companies", "/cities", "/profile", "/admin"];
 const AUTH_PATHS = ["/login", "/signup"];
 
 export function proxy(request: NextRequest) {
@@ -41,7 +41,8 @@ export const config = {
   matcher: [
     "/feed/:path*",
     "/directory/:path*",
-    "/organizations/:path*",
+    "/companies/:path*",
+    "/cities/:path*",
     "/profile/:path*",
     "/admin/:path*",
     "/login",

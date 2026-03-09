@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/lib/firebase/auth-edge";
-import { getOrganizations } from "@/lib/firestore/organizations";
+import { getCompanies } from "@/lib/firestore/companies";
 
 export async function GET(request: NextRequest) {
   const tokens = await getTokens(request.cookies, authConfig);
   if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const organizations = await getOrganizations();
-  return NextResponse.json(organizations);
+  const companies = await getCompanies();
+  return NextResponse.json(companies);
 }
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const { name, logoUrl } = await request.json();
     if (!name) return NextResponse.json({ error: "Name required" }, { status: 400 });
 
-    const ref = await adminDb.collection("organizations").add({
+    const ref = await adminDb.collection("companies").add({
       name,
       ...(logoUrl && { logoUrl }),
     });
