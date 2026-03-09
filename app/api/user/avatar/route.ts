@@ -7,8 +7,8 @@ import sharp from "sharp";
 
 const BUCKET = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!;
 const SIZE = 400;
-const UPLOAD_URL = "https://upload.cornellappdev.com/upload";
-const REMOVE_URL = "https://upload.cornellappdev.com/remove";
+const UPLOAD_URL = "https://upload.cornellappdev.com/upload/";
+const REMOVE_URL = "https://upload.cornellappdev.com/remove/";
 const APPDEV_BUCKET = "alumni-website";
 
 async function uploadToAppDev(buffer: Buffer, filename: string): Promise<string> {
