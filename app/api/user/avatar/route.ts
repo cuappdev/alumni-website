@@ -12,7 +12,7 @@ const REMOVE_URL = "https://upload.cornellappdev.com/remove";
 const APPDEV_BUCKET = "alumni-website";
 
 async function uploadToAppDev(buffer: Buffer, filename: string): Promise<string> {
-  const blob = new Blob([buffer], { type: "image/webp" });
+  const blob = new Blob([new Uint8Array(buffer)], { type: "image/webp" });
   const form = new FormData();
   form.append("bucket", APPDEV_BUCKET);
   form.append("image", blob, filename);
