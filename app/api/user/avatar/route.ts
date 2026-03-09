@@ -15,9 +15,17 @@ async function uploadToAppDev(buffer: Buffer, filename: string): Promise<string>
   const form = new FormData();
   form.append("bucket", APPDEV_BUCKET);
   form.append("image", new File([new Uint8Array(buffer)], filename, { type: "image/webp" }));
+  console.log("[avatar/appdev] uploading to", UPLOAD_URL, { bucket: APPDEV_BUCKET, filename, bytes: buffer.byteLength });
   const res = await fetch(UPLOAD_URL, { method: "POST", body: form });
-  if (!res.ok) throw new Error("Upload failed");
-  return (await res.text()).trim();
+  console.log("[avatar/appdev] response status", res.status);
+  if (!res.ok) {
+    const body = await res.text();
+    console.error("[avatar/appdev] upload failed", { status: res.status, body });
+    throw new Error(`AppDev upload failed: ${res.status} ${body}`);
+  }
+  const url = (await res.text()).trim();
+  console.log("[avatar/appdev] uploaded url", url);
+  return url;
 }
 
 async function removeFromAppDev(imageUrl: string): Promise<void> {
@@ -52,38 +60,47 @@ async function removeFromEmulator(uid: string): Promise<void> {
 }
 
 export async function POST(request: NextRequest) {
-  const tokens = await getTokens(request.cookies, authConfig);
-  if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const tokens = await getTokens(request.cookies, authConfig);
+    if (!tokens) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const uid = tokens.decodedToken.uid;
+    const uid = tokens.decodedToken.uid;
 
-  const formData = await request.formData();
-  const file = formData.get("file") as File | null;
-  if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
-  const arrayBuffer = await file.arrayBuffer();
-  const processed = await sharp(Buffer.from(arrayBuffer))
-    .resize(SIZE, SIZE, { fit: "cover" })
-    .webp({ quality: 85 })
-    .toBuffer();
+    console.log("[avatar] received file", { name: file.name, size: file.size, type: file.type });
 
-  // Remove old image
-  const existing = await getUserProfile(uid);
-  if (existing?.profilePictureUrl) {
-    if (process.env.NODE_ENV === "development") {
-      await removeFromEmulator(uid);
-    } else {
-      await removeFromAppDev(existing.profilePictureUrl);
+    const arrayBuffer = await file.arrayBuffer();
+    const processed = await sharp(Buffer.from(arrayBuffer))
+      .resize(SIZE, SIZE, { fit: "cover" })
+      .webp({ quality: 85 })
+      .toBuffer();
+
+    console.log("[avatar] processed buffer size", processed.byteLength);
+
+    // Remove old image
+    const existing = await getUserProfile(uid);
+    if (existing?.profilePictureUrl) {
+      if (process.env.NODE_ENV === "development") {
+        await removeFromEmulator(uid);
+      } else {
+        await removeFromAppDev(existing.profilePictureUrl);
+      }
     }
+
+    // Upload new image
+    const url =
+      process.env.NODE_ENV === "development"
+        ? await uploadToEmulator(processed, uid)
+        : await uploadToAppDev(processed, `${uid}.webp`);
+
+    await updateUserProfile(uid, { profilePictureUrl: url });
+
+    return NextResponse.json({ url });
+  } catch (err) {
+    console.error("[avatar] unhandled error", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
-
-  // Upload new image
-  const url =
-    process.env.NODE_ENV === "development"
-      ? await uploadToEmulator(processed, uid)
-      : await uploadToAppDev(processed, `${uid}.webp`);
-
-  await updateUserProfile(uid, { profilePictureUrl: url });
-
-  return NextResponse.json({ url });
 }
