@@ -28,13 +28,15 @@ async function sendInviteEmail(params: {
     from: "AppDev Alumni <noreply@alumni.cornellappdev.com>",
     to: params.to,
     subject: "You're invited to join the AppDev Alumni Network",
-    template: "invitation-email",
-    data: {
-      firstName: params.firstName,
-      invitationLink: params.invitationLink,
-      inviterEmail: params.inviterEmail,
-      inviterFirstName: params.inviterFirstName,
-      inviterLastName: params.inviterLastName,
+    template: {
+      id: "invitation-email",
+      variables: {
+        firstName: params.firstName,
+        invitationLink: params.invitationLink,
+        inviterEmail: params.inviterEmail,
+        inviterFirstName: params.inviterFirstName,
+        inviterLastName: params.inviterLastName,
+      },
     },
   });
 }
