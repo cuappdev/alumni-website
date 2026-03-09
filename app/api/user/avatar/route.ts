@@ -12,10 +12,9 @@ const REMOVE_URL = "https://upload.cornellappdev.com/remove";
 const APPDEV_BUCKET = "alumni-website";
 
 async function uploadToAppDev(buffer: Buffer, filename: string): Promise<string> {
-  const blob = new Blob([new Uint8Array(buffer)], { type: "image/webp" });
   const form = new FormData();
   form.append("bucket", APPDEV_BUCKET);
-  form.append("image", blob, filename);
+  form.append("image", new File([new Uint8Array(buffer)], filename, { type: "image/webp" }));
   const res = await fetch(UPLOAD_URL, { method: "POST", body: form });
   if (!res.ok) throw new Error("Upload failed");
   return (await res.text()).trim();
