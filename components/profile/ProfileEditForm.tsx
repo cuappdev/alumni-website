@@ -14,7 +14,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { ProfileFormFields } from "./ProfileFormFields";
 import { useProfileFormState } from "./useProfileFormState";
 import { toast } from "sonner";
@@ -30,14 +29,15 @@ const schema = z.object({
     .optional(),
   linkedinUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   instagramUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  emailNotifications: z.boolean(),
 });
 
 type FormData = z.infer<typeof schema>;
 
+type ProfileUpdates = Partial<Omit<UserProfile, "profilePictureUrl">> & { profilePictureUrl?: string | null };
+
 interface ProfileEditFormProps {
   profile: UserProfile;
-  onUpdated: (updated: Partial<UserProfile>) => void;
+  onUpdated: (updated: ProfileUpdates) => void;
 }
 
 export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
@@ -54,19 +54,20 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
       phoneNumber: profile.phoneNumber ?? "",
       linkedinUrl: profile.linkedinUrl ?? "",
       instagramUrl: profile.instagramUrl ?? "",
-      emailNotifications: profile.emailNotifications,
     },
   });
 
   const onSubmit = async (data: FormData) => {
     try {
-      let profilePictureUrl = formState.profilePictureUrl;
+      let profilePictureUrl: string | null | undefined = formState.profilePictureUrl;
       if (formState.pendingPictureFile) {
         const form = new FormData();
         form.append("file", formState.pendingPictureFile, "avatar.jpg");
         const res = await fetch("/api/user/avatar", { method: "POST", body: form });
         if (!res.ok) throw new Error("Avatar upload failed");
         profilePictureUrl = (await res.json()).url;
+      } else if (profilePictureUrl === undefined && profile.profilePictureUrl) {
+        profilePictureUrl = null;
       }
 
       const updates = {
@@ -123,16 +124,8 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
             onCityIdChange={formState.setSelectedCityId}
             profilePictureUrl={formState.profilePictureUrl}
             onProfilePictureFileSelected={formState.onPictureSelected}
+            onProfilePictureRemoved={formState.onPictureRemoved}
           />
-          <div className="flex items-center gap-2">
-            <input
-              id="edit-notifications"
-              type="checkbox"
-              {...register("emailNotifications")}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="edit-notifications">Email notifications for new posts</Label>
-          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel

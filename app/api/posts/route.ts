@@ -134,7 +134,23 @@ export async function POST(request: NextRequest) {
     const author = allUsers.find((u) => u.uid === tokens.decodedToken.uid);
     const authorName = author ? `${author.firstName} ${author.lastName}` : "Someone";
 
-    const subscribers = allUsers.filter((u) => u.emailNotifications === true && u.email);
+    const notifyField: Record<string, string> = {
+      post: "notifyPosts",
+      job: "notifyJobs",
+      announcement: "notifyAnnouncements",
+      event: "notifyEventsAll",
+    };
+    const field = notifyField[type] ?? "emailNotifications";
+
+    let subscribers = allUsers.filter((u) => u[field] === true && u.email);
+
+    // Also notify users with notifyEventsInCity if this event matches their city
+    if (type === "event" && cityId) {
+      const citySubscribers = allUsers.filter(
+        (u) => u.notifyEventsInCity === true && u.cityId === cityId && u.email && !subscribers.find((s) => s.uid === u.uid)
+      );
+      subscribers = [...subscribers, ...citySubscribers];
+    }
 
     if (subscribers.length > 0) {
       await sendPostNotifications(subscribers as { email: string }[], title, description, authorName);

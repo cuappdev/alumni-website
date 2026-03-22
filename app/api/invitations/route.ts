@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     const code = crypto.randomUUID();
     const invitationLink = await adminAuth.generateSignInWithEmailLink(email, {
-      url: `${APP_URL}/login/verify`,
+      url: `${APP_URL}/login/verify?email=${encodeURIComponent(email)}`,
       handleCodeInApp: true,
     });
 

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AppDev Alumni",
-  description: "Private alumni network — stay connected with your classmates.",
+  title: "Cornell AppDev Alumni",
+  description: "Stay connected with your fellow AppDev classmates and alumni.",
 };
 
 export default function RootLayout({

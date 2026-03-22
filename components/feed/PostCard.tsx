@@ -53,6 +53,7 @@ const TYPE_BADGE: Record<Post["type"], { label: string; className: string; icon:
     className: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
     icon: <CalendarDays className="size-3" />,
   },
+  joined: null,
 };
 
 function JobMeta({ post }: { post: JobPost }) {
@@ -132,11 +133,10 @@ function EventMeta({ post }: { post: EventPost }) {
         <button
           type="button"
           onClick={handleRsvp}
-          className={`cursor-pointer flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-            going
-              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-              : "bg-muted text-muted-foreground hover:text-foreground"
-          }`}
+          className={`cursor-pointer flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${going
+            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
         >
           <CalendarCheck className="size-3.5" />
           {going ? "Going" : "Mark as going"}
@@ -214,7 +214,7 @@ export function PostCard({ post }: { post: Post }) {
   const badge = TYPE_BADGE[post.type];
 
   return (
-    <Card>
+    <Card className="gap-6">
       <CardHeader className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           {author && (

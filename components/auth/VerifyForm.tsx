@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { isSignInWithEmailLink, signInWithEmailLink, signOut } from "firebase/auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,7 @@ type FormData = z.infer<typeof schema>;
 
 export function VerifyForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { refreshProfile } = useAuth();
   const [needsEmail, setNeedsEmail] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,8 +56,14 @@ export function VerifyForm() {
       router.push(profileComplete ? "/feed" : "/signup/complete");
     } catch (err) {
       console.error(err);
-      toast.error("Sign-in failed. The link may have expired.");
-      router.push("/login");
+      const code = (err as { code?: string })?.code;
+      if (code === "auth/invalid-email") {
+        toast.error("That doesn't match the email this link was sent to.");
+        setNeedsEmail(true);
+      } else {
+        toast.error("Sign-in failed. The link may have expired.");
+        router.push("/login");
+      }
     } finally {
       setLoading(false);
     }
@@ -67,13 +74,13 @@ export function VerifyForm() {
       router.push("/login");
       return;
     }
-    const email = window.localStorage.getItem(EMAIL_KEY);
+    const email = searchParams.get("email") || window.localStorage.getItem(EMAIL_KEY);
     if (email) {
       completeSignIn(email);
     } else {
       setNeedsEmail(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!needsEmail) {
@@ -89,12 +96,12 @@ export function VerifyForm() {
   }
 
   return (
-    <Card>
+    <Card className="gap-6">
       <CardHeader className="items-center text-center">
         <img src="/appdev.svg" alt="Cornell AppDev" className="h-10 mb-2 mx-auto" />
         <CardTitle>Confirm your email</CardTitle>
         <CardDescription>
-          Enter the email address you used to request the sign-in link.
+          Enter the email address this sign-in link was sent to.
         </CardDescription>
       </CardHeader>
       <CardContent>

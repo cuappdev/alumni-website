@@ -18,7 +18,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth/context";
-import { PostType } from "@/types";
 import { CitySelector } from "@/components/profile/CitySelector";
 
 const schema = z
@@ -43,7 +42,9 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
-type TypeOption = { value: PostType; label: string; adminOnly?: boolean };
+type CreatablePostType = "post" | "job" | "announcement" | "event";
+
+type TypeOption = { value: CreatablePostType; label: string; adminOnly?: boolean };
 
 const ALL_TYPE_OPTIONS: TypeOption[] = [
   { value: "post", label: "Post" },
@@ -52,7 +53,7 @@ const ALL_TYPE_OPTIONS: TypeOption[] = [
   { value: "event", label: "Event", adminOnly: true },
 ];
 
-const DIALOG_TITLES: Record<PostType, string> = {
+const DIALOG_TITLES: Record<CreatablePostType, string> = {
   post: "Create a post",
   job: "Post a job listing",
   announcement: "Create an announcement",
@@ -61,8 +62,8 @@ const DIALOG_TITLES: Record<PostType, string> = {
 
 interface Props {
   onSuccess?: () => void;
-  allowedTypes?: PostType[];
-  defaultType?: PostType;
+  allowedTypes?: CreatablePostType[];
+  defaultType?: CreatablePostType;
   label?: string;
 }
 

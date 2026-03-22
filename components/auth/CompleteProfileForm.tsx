@@ -107,8 +107,9 @@ export function CompleteProfileForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="gap-6">
+      <CardHeader className="items-center text-center">
+        <img src="/appdev.svg" alt="Cornell AppDev" className="h-10 mb-2 mx-auto" />
         <CardTitle>Complete your profile</CardTitle>
         <CardDescription>Just a few more details before you join the network.</CardDescription>
       </CardHeader>
@@ -133,6 +134,7 @@ export function CompleteProfileForm() {
             onCityIdChange={formState.setSelectedCityId}
             profilePictureUrl={formState.profilePictureUrl}
             onProfilePictureFileSelected={formState.onPictureSelected}
+            onProfilePictureRemoved={formState.onPictureRemoved}
           />
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "Saving…" : "Complete sign-up"}

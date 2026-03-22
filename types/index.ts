@@ -19,6 +19,11 @@ export interface UserProfile {
   instagramUrl?: string;
   role?: "admin" | "member";
   emailNotifications: boolean;
+  notifyPosts: boolean;
+  notifyJobs: boolean;
+  notifyAnnouncements: boolean;
+  notifyEventsInCity: boolean;
+  notifyEventsAll: boolean;
   profileComplete: boolean;
   createdAt: string;
   updatedAt: string;

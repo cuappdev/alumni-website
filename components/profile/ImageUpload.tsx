@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 interface ImageUploadProps {
   currentUrl?: string;
   onFileSelected: (blob: Blob, previewUrl: string) => void;
+  onRemove?: () => void;
   label?: string;
   name?: string;
 }
@@ -57,7 +58,7 @@ function getCroppedBlob(image: HTMLImageElement, crop: Crop): Promise<Blob> {
   });
 }
 
-export function ImageUpload({ currentUrl, onFileSelected, label = "Photo", name }: ImageUploadProps) {
+export function ImageUpload({ currentUrl, onFileSelected, onRemove, label = "Photo", name }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | undefined>(currentUrl || undefined);
   const [imgSrc, setImgSrc] = useState("");
   const [crop, setCrop] = useState<Crop>();
@@ -100,13 +101,23 @@ export function ImageUpload({ currentUrl, onFileSelected, label = "Photo", name 
                 : "?"}
             </AvatarFallback>
           </Avatar>
-          <Input
+          <input
             ref={inputRef}
             type="file"
             accept="image/*"
             onChange={handleFileChange}
-            className="max-w-xs"
+            className="hidden"
           />
+          <div className="flex gap-2">
+            <Button type="button" onClick={() => inputRef.current?.click()}>
+              {preview ? "Change photo" : "Upload photo"}
+            </Button>
+            {preview && onRemove && (
+              <Button type="button" variant="outline" onClick={() => { setPreview(undefined); onRemove(); }}>
+                Remove
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

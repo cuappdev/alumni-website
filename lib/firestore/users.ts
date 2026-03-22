@@ -54,9 +54,14 @@ export async function updateUserProfile(
   data: Partial<Omit<UserProfile, "uid" | "createdAt">>
 ): Promise<void> {
   const OPTIONAL_STRINGS = ["profilePictureUrl", "bio", "phoneNumber", "linkedinUrl", "instagramUrl"] as const;
-  const sanitized = { ...data };
+  const sanitized: Record<string, unknown> = { ...data };
   for (const key of OPTIONAL_STRINGS) {
-    if (key in sanitized && !sanitized[key]) delete sanitized[key];
+    if (!(key in sanitized)) continue;
+    if (sanitized[key] === null) {
+      sanitized[key] = FieldValue.delete();
+    } else if (!sanitized[key]) {
+      delete sanitized[key];
+    }
   }
   await adminDb.collection("users").doc(uid).update({ ...sanitized, updatedAt: FieldValue.serverTimestamp() });
 }

@@ -46,6 +46,11 @@ export async function POST(request: NextRequest) {
       currentCompanyIds: currentCompanyIds ?? [],
       appDevRoles: appDevRoles ?? [],
       emailNotifications: true,
+      notifyPosts: true,
+      notifyJobs: true,
+      notifyAnnouncements: true,
+      notifyEventsInCity: true,
+      notifyEventsAll: false,
       profileComplete: true,
       updatedAt: FieldValue.serverTimestamp(),
     };

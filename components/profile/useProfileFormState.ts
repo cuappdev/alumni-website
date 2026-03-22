@@ -16,6 +16,11 @@ export function useProfileFormState(initial?: Partial<UserProfile>) {
     setProfilePictureUrl(previewUrl);
   };
 
+  const onPictureRemoved = () => {
+    setPendingPictureFile(null);
+    setProfilePictureUrl(undefined);
+  };
+
   return {
     selectedRoles, setSelectedRoles,
     selectedCompanyIds, setSelectedCompanyIds,
@@ -24,5 +29,6 @@ export function useProfileFormState(initial?: Partial<UserProfile>) {
     profilePictureUrl,
     pendingPictureFile,
     onPictureSelected,
+    onPictureRemoved,
   };
 }

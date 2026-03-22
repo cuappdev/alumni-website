@@ -62,7 +62,10 @@ export function ProfileHeader({ initialProfile, initialCompanies }: ProfileHeade
             {isOwner && (
               <ProfileEditForm
                 profile={profile}
-                onUpdated={(updates) => setProfile((prev) => ({ ...prev, ...updates }))}
+                onUpdated={(updates) => setProfile((prev) => {
+                  const cleaned = Object.fromEntries(Object.entries(updates).filter(([, v]) => v !== null));
+                  return { ...prev, ...cleaned };
+                })}
               />
             )}
           </div>

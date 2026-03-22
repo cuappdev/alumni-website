@@ -22,7 +22,8 @@ export function PostList({ refreshKey, type }: PostListProps) {
   }, [refreshKey, type]);
 
   if (posts.length === 0) {
-    return <p className="text-center text-muted-foreground py-12">No posts yet. Be the first!</p>;
+    const itemName = type === "job" ? "job listing" : type === "announcement" ? "announcement" : type === "event" ? "event" : "post";
+    return <p className="text-center text-muted-foreground py-12">No {itemName}s yet. Be the first!</p>;
   }
 
   return (
