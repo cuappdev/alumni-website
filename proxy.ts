@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authConfig } from "@/lib/firebase/auth-edge";
 
 const PROTECTED_PATHS = ["/feed", "/directory", "/companies", "/cities", "/profile", "/admin"];
-const AUTH_PATHS = ["/login", "/signup"];
+const AUTH_PATHS = ["/login"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -46,7 +46,7 @@ export const config = {
     "/profile/:path*",
     "/admin/:path*",
     "/login",
-    "/signup",
+    "/login/verify",
     "/api/login",
     "/api/logout",
   ],

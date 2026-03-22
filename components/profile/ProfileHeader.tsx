@@ -44,6 +44,9 @@ export function ProfileHeader({ initialProfile, initialCompanies }: ProfileHeade
   const fullName = `${profile.firstName} ${profile.lastName}`;
   const initials = `${profile.firstName[0]}${profile.lastName[0]}`.toUpperCase();
   const profileCompanies = allCompanies.filter((c) => profile.companyIds.includes(c.id));
+  const currentCompanyIds = profile.currentCompanyIds ?? [];
+  const currentCompanies = profileCompanies.filter((c) => currentCompanyIds.includes(c.id));
+  const previousCompanies = profileCompanies.filter((c) => !currentCompanyIds.includes(c.id));
   const roles = profile.appDevRoles ?? [];
 
   return (
@@ -105,17 +108,31 @@ export function ProfileHeader({ initialProfile, initialCompanies }: ProfileHeade
       {profileCompanies.length > 0 && (
         <>
           <Separator />
-          <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-              Companies
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {profileCompanies.map((c) => (
-                <Badge key={c.id} variant="secondary">
-                  {c.name}
-                </Badge>
-              ))}
-            </div>
+          <div className="space-y-3">
+            {currentCompanies.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+                  Current
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {currentCompanies.map((c) => (
+                    <Badge key={c.id} variant="default">{c.name}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {previousCompanies.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+                  Previous
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {previousCompanies.map((c) => (
+                    <Badge key={c.id} variant="secondary">{c.name}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

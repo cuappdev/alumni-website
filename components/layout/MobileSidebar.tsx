@@ -19,10 +19,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { href: "/feed", label: "Posts" },
+  { href: "/feed", label: "Feed" },
+  { href: "/jobs", label: "Jobs" },
   { href: "/directory", label: "Directory" },
-  { href: "/companies", label: "Companies" },
-  { href: "/cities", label: "Cities" },
 ];
 
 export function MobileSidebar() {

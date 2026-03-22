@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/lib/firebase/auth-edge";
 import { SUPER_ADMIN_EMAIL } from "@/lib/constants";
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const { uid, email } = tokens.decodedToken;
 
     const body = await request.json();
-    const { firstName, lastName, classYear, bio, phoneNumber, companyIds, appDevRoles, profilePictureUrl, cityId, graduated, linkedinUrl, instagramUrl } =
+    const { firstName, lastName, classYear, bio, phoneNumber, companyIds, currentCompanyIds, appDevRoles, profilePictureUrl, cityId, graduated, linkedinUrl, instagramUrl } =
       body;
 
     const isAdmin = email === SUPER_ADMIN_EMAIL;
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       lastName,
       classYear,
       companyIds: companyIds ?? [],
+      currentCompanyIds: currentCompanyIds ?? [],
       appDevRoles: appDevRoles ?? [],
       emailNotifications: true,
       profileComplete: true,
@@ -66,6 +67,15 @@ export async function POST(request: NextRequest) {
         .doc(invCode)
         .update({ usedAt: FieldValue.serverTimestamp() });
     }
+
+    await adminDb.collection("posts").add({
+      authorId: uid,
+      type: "joined",
+      title: "",
+      description: "",
+      likes: [],
+      createdAt: Timestamp.now(),
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

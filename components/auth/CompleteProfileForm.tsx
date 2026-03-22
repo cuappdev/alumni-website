@@ -68,6 +68,7 @@ export function CompleteProfileForm() {
           bio: data.bio || undefined,
           phoneNumber: data.phoneNumber || undefined,
           companyIds: formState.selectedCompanyIds,
+          currentCompanyIds: formState.selectedCurrentCompanyIds,
           appDevRoles: formState.selectedRoles,
           cityId: formState.selectedCityId,
           linkedinUrl: data.linkedinUrl || undefined,
@@ -126,6 +127,8 @@ export function CompleteProfileForm() {
             onRolesChange={formState.setSelectedRoles}
             selectedCompanyIds={formState.selectedCompanyIds}
             onCompanyIdsChange={formState.setSelectedCompanyIds}
+            currentCompanyIds={formState.selectedCurrentCompanyIds}
+            onCurrentCompanyIdsChange={formState.setSelectedCurrentCompanyIds}
             selectedCityId={formState.selectedCityId}
             onCityIdChange={formState.setSelectedCityId}
             profilePictureUrl={formState.profilePictureUrl}

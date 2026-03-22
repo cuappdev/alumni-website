@@ -25,7 +25,7 @@ export function AppDevRoleSelector({ selected, onChange }: AppDevRoleSelectorPro
           type="button"
           onClick={() => toggle(role)}
           className={cn(
-            "rounded-full px-3 py-1 text-sm border transition-colors",
+            "cursor-pointer rounded-full px-3 py-1 text-sm border transition-colors",
             selected.includes(role)
               ? "bg-primary text-primary-foreground border-primary"
               : "border-input hover:bg-muted"

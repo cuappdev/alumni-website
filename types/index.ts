@@ -11,6 +11,7 @@ export interface UserProfile {
   profilePictureUrl?: string;
   phoneNumber?: string;
   companyIds: string[];
+  currentCompanyIds: string[];
   appDevRoles: AppDevRole[];
   cityId?: string;
   graduated?: boolean;
@@ -43,15 +44,43 @@ export interface PostAuthor {
   profilePictureUrl?: string;
 }
 
-export interface Post {
+export type PostType = "post" | "job" | "announcement" | "event" | "joined";
+
+interface PostBase {
   id: string;
   authorId: string;
+  type: PostType;
   title: string;
   description: string;
   likes: string[];
   createdAt: string;
   author?: PostAuthor;
 }
+
+export interface RegularPost extends PostBase { type: "post"; }
+
+export interface JobPost extends PostBase {
+  type: "job";
+  company: string;
+  city?: string;
+  applyUrl?: string;
+}
+
+export interface AnnouncementPost extends PostBase { type: "announcement"; }
+
+export interface EventPost extends PostBase {
+  type: "event";
+  eventDate: string;
+  cityId?: string;
+  city?: string;
+  url?: string;
+  rsvps: string[];
+  rsvpProfiles?: PostAuthor[];
+}
+
+export interface JoinedPost extends PostBase { type: "joined"; }
+
+export type Post = RegularPost | JobPost | AnnouncementPost | EventPost | JoinedPost;
 
 // Doc ID = invite code (UUID). Readable by anyone who knows the code.
 export interface Invitation {

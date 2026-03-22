@@ -1,18 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Post } from "@/types";
+import { Post, PostType } from "@/types";
 import { PostCard } from "./PostCard";
 
-export function PostList({ refreshKey }: { refreshKey?: number }) {
+interface PostListProps {
+  refreshKey?: number;
+  type?: PostType | PostType[];
+}
+
+export function PostList({ refreshKey, type }: PostListProps) {
   const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
-    fetch("/api/posts")
+    const typeParam = Array.isArray(type) ? type.join(",") : type;
+    const url = typeParam ? `/api/posts?type=${typeParam}` : "/api/posts";
+    fetch(url)
       .then((r) => (r.ok ? r.json() : []))
       .then(setPosts)
       .catch(console.error);
-  }, [refreshKey]);
+  }, [refreshKey, type]);
 
   if (posts.length === 0) {
     return <p className="text-center text-muted-foreground py-12">No posts yet. Be the first!</p>;

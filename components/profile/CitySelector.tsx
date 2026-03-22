@@ -106,7 +106,7 @@ export function CitySelector({ selectedId, onChange }: CitySelectorProps) {
       {selectedCity && (
         <Badge variant="secondary" className="gap-1 pr-1">
           {selectedCity.name}
-          <button type="button" onClick={handleRemove} className="ml-1 hover:text-destructive">
+          <button type="button" onClick={handleRemove} className="ml-1 cursor-pointer hover:text-destructive">
             <X className="h-3 w-3" />
           </button>
         </Badge>
@@ -127,7 +127,7 @@ export function CitySelector({ selectedId, onChange }: CitySelectorProps) {
                 <button
                   key={name}
                   type="button"
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted ${i === highlightedIndex ? "bg-muted" : ""}`}
+                  className={`cursor-pointer w-full text-left px-3 py-2 text-sm hover:bg-muted ${i === highlightedIndex ? "bg-muted" : ""}`}
                   onMouseDown={(e) => { e.preventDefault(); handleSelect(name); }}
                   onMouseEnter={() => setHighlightedIndex(i)}
                 >

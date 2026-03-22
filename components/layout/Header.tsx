@@ -18,10 +18,9 @@ import { MobileSidebar } from "./MobileSidebar";
 import { toast } from "sonner";
 
 const navLinks = [
-  { href: "/feed", label: "Posts" },
+  { href: "/feed", label: "Feed" },
+  { href: "/jobs", label: "Jobs" },
   { href: "/directory", label: "Directory" },
-  { href: "/companies", label: "Companies" },
-  { href: "/cities", label: "Cities" },
 ];
 
 const adminLink = { href: "/admin", label: "Admin" };

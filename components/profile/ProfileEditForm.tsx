@@ -75,6 +75,7 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
         phoneNumber: data.phoneNumber || undefined,
         appDevRoles: formState.selectedRoles,
         companyIds: formState.selectedCompanyIds,
+        currentCompanyIds: formState.selectedCurrentCompanyIds,
         cityId: formState.selectedCityId,
         linkedinUrl: data.linkedinUrl || undefined,
         instagramUrl: data.instagramUrl || undefined,
@@ -116,6 +117,8 @@ export function ProfileEditForm({ profile, onUpdated }: ProfileEditFormProps) {
             onRolesChange={formState.setSelectedRoles}
             selectedCompanyIds={formState.selectedCompanyIds}
             onCompanyIdsChange={formState.setSelectedCompanyIds}
+            currentCompanyIds={formState.selectedCurrentCompanyIds}
+            onCurrentCompanyIdsChange={formState.setSelectedCurrentCompanyIds}
             selectedCityId={formState.selectedCityId}
             onCityIdChange={formState.setSelectedCityId}
             profilePictureUrl={formState.profilePictureUrl}

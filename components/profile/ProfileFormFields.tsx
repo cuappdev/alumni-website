@@ -20,6 +20,8 @@ interface ProfileFormFieldsProps {
   onRolesChange: (roles: AppDevRole[]) => void;
   selectedCompanyIds: string[];
   onCompanyIdsChange: (ids: string[]) => void;
+  currentCompanyIds?: string[];
+  onCurrentCompanyIdsChange?: (ids: string[]) => void;
   selectedCityId: string | undefined;
   onCityIdChange: (id: string | undefined) => void;
   profilePictureUrl: string | undefined;
@@ -35,6 +37,8 @@ export function ProfileFormFields({
   onRolesChange,
   selectedCompanyIds,
   onCompanyIdsChange,
+  currentCompanyIds,
+  onCurrentCompanyIdsChange,
   selectedCityId,
   onCityIdChange,
   profilePictureUrl: _profilePictureUrl,
@@ -87,7 +91,12 @@ export function ProfileFormFields({
       <div className="space-y-1">
         <Label>Companies</Label>
         <p className="text-xs text-muted-foreground">Where have you worked?</p>
-        <CompanySelector selectedIds={selectedCompanyIds} onChange={onCompanyIdsChange} />
+        <CompanySelector
+          selectedIds={selectedCompanyIds}
+          onChange={onCompanyIdsChange}
+          currentIds={currentCompanyIds}
+          onCurrentChange={onCurrentCompanyIdsChange}
+        />
       </div>
       <div className="space-y-1">
         <Label>City (optional)</Label>

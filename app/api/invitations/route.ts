@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { Resend } from "resend";
 import { Timestamp } from "firebase-admin/firestore";
 import { getTokens } from "next-firebase-auth-edge";
@@ -93,7 +93,10 @@ export async function POST(request: NextRequest) {
     }
 
     const code = crypto.randomUUID();
-    const invitationLink = `${APP_URL}/signup?code=${code}`;
+    const invitationLink = await adminAuth.generateSignInWithEmailLink(email, {
+      url: `${APP_URL}/login/verify`,
+      handleCodeInApp: true,
+    });
 
     await sendInviteEmail({
       to: email,
