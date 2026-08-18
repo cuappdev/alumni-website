@@ -1,0 +1,13 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+file_include_globs = [".env.local"]
+
+[scripts]
+setup = "pnpm install"
+run_mode = "nonconcurrent"
+
+[scripts.run.dev]
+available_in = ["local"]
+command = "concurrently -k \"firebase emulators:start --import=.emulator-data --export-on-exit\" \"next dev --port $CONDUCTOR_PORT\""
+default = true
+icon = "play"
